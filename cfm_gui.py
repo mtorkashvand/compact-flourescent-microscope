@@ -20,10 +20,14 @@ import time
 import signal
 from subprocess import Popen
 
+from collections import defaultdict
+
 import PySimpleGUI as sg
 
 from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import run as cfm_with_gui_run
+
+from cfm.ui.elements import InputSlider
 ## TODO DEBUG CONTINUE FROM HERE: run `cfm_with_gui_run` from here with KWARGS
 
 # Parameters
@@ -78,6 +82,16 @@ def sg_input_port(key, port):
 # TODO: use `Menu Element` to add menu bars on top of the window
 # TODO: 
 
+
+ui_framerate = InputSlider('framerate: ', key='--FRAMERATE--', default_value=20, range=(1, 48), type_caster=int)
+ui_exposure_behavior = InputSlider('exposure behavior: ', key='--EXPOSURE-BEHAVIOR--', default_value=18000, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
+ui_exposure_gfp = InputSlider('exposure gfp: ', key='--EXPOSURE-GFP--', default_value=48750, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
+# Add Elements
+elements = [
+    ui_framerate, ui_exposure_behavior, ui_exposure_gfp,
+]
+
+
 progress_bar = sg.ProgressBar(
     max_value=100,
     size=(100,5),
@@ -110,18 +124,24 @@ layout = [
         sg.HorizontalSeparator(),
     ],
     [
-        sg.Text("framerate "),
-        sg.Input(default_text="20.0", size=6, key="framerate_input"),
-        sg.Slider(
-            range=(0.0, 48.0),
-            default_value=20.0,
-            resolution=0.01,
-            orientation='h',
-            key="framerate_slider"
-        ),
-        sg.Text("binsize "), sg_input_port("binsize", 2),
-        sg.Text("flir_exposure_behavior "), sg_input_port("flir_exposure_behavior", 4500.0),
-        sg.Text("flir_exposure_gcamp "), sg_input_port("flir_exposure_gcamp", 975000/20),
+        *ui_framerate.elements, *ui_exposure_behavior.elements, *ui_exposure_gfp.elements
+    ],
+    [
+        # sg.Text("framerate "),
+        # sg.Input(
+        #     default_text="20.0", size=6, key="framerate_input",
+        #     enable_events=True
+        # ),
+        # sg.Slider(
+        #     range=(0.0, 48.0),
+        #     default_value=20.0,
+        #     resolution=1,
+        #     orientation='h',
+        #     key="framerate_slider"
+        # ),
+        # sg.Text("binsize "), sg_input_port("binsize", 2),
+        # sg.Text("flir_exposure_behavior "), sg_input_port("flir_exposure_behavior", 4500.0),
+        # sg.Text("flir_exposure_gcamp "), sg_input_port("flir_exposure_gcamp", 975000/20),
         # sg.Text("fmt "), sg.Listbox(
         #     values=[
         #         "UINT8_YX_512_512",
@@ -132,7 +152,7 @@ layout = [
         #     size=(20,3),
         #     key="fmt"
         # ),
-        sg.Text("fmt "), sg.Combo(
+        sg.Text("format "), sg.Combo(
             values=[
                 "UINT8_YX_512_512",
                 "UINT8_YX_256_256",
@@ -140,7 +160,7 @@ layout = [
             ],
             default_value="UINT8_YX_512_512",
             size=(20,3),
-            key="fmt"
+            key="format"
         ),
         sg.Text("teensy_usb_port "), sg_input_port("teensy_usb_port", "COM4"),
         sg.Checkbox(
@@ -154,91 +174,92 @@ layout = [
     [
         sg.HorizontalSeparator(),
     ],
-    [
-        sg.Text("Forwarder Ports: "),
-        sg.Text("forwarder_in "), sg_input_port("forwarder_in", 5000),
-        sg.Text("forwarder_out "), sg_input_port("forwarder_out", 5001),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.Text("Server Client Ports: "),
-        sg_input_port("server_client", 5002),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.Text("Behavior Camera: "),
-        sg.Text("data_camera_out_behavior "), sg_input_port("data_camera_out_behavior", 5003),
-        sg.Text("data_stamped_behavior "), sg_input_port("data_stamped_behavior", 5004),
-        sg.Text("tracker_out_behavior "), sg_input_port("tracker_out_behavior", 5005),
-        sg.Text("tracker_out_debug "), sg_input_port("tracker_out_debug", 5009),
-        sg.Text("camera_serial_number_behavior "), sg.Input(
-            key="camera_serial_number_behavior",
-            size=8,
-            default_text="22591117"
-        ),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.Text("GCaMP Camera: "),
-        sg.Text("data_camera_out_gcamp "), sg_input_port("data_camera_out_gcamp", 5006),
-        sg.Text("data_stamped_gcamp "), sg_input_port("data_stamped_gcamp", 5007),
-        sg.Text("tracker_out_gcamp "), sg_input_port("tracker_out_gcamp", 5008),
-        sg.Text("camera_serial_number_gcamp "), sg.Input(
-            key="camera_serial_number_gcamp",
-            size=8,
-            default_text="22591142"
-        ),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.Text("General: "),
-        sg.Text("XInputToZMQPub_out "), sg_input_port("XInputToZMQPub_out", 6000),
-        sg.Text("processor_out "), sg_input_port("processor_out", 6001),
-    ],
+    # [
+    #     sg.Text("Forwarder Ports: "),
+    #     sg.Text("forwarder_in "), sg_input_port("forwarder_in", 5000),
+    #     sg.Text("forwarder_out "), sg_input_port("forwarder_out", 5001),
+    # ],
+    # [
+    #     sg.HorizontalSeparator(),
+    # ],
+    # [
+    #     sg.Text("Server Client Ports: "),
+    #     sg_input_port("server_client", 5002),
+    # ],
+    # [
+    #     sg.HorizontalSeparator(),
+    # ],
+    # [
+    #     sg.Text("Behavior Camera: "),
+    #     sg.Text("data_camera_out_behavior "), sg_input_port("data_camera_out_behavior", 5003),
+    #     sg.Text("data_stamped_behavior "), sg_input_port("data_stamped_behavior", 5004),
+    #     sg.Text("tracker_out_behavior "), sg_input_port("tracker_out_behavior", 5005),
+    #     sg.Text("tracker_out_debug "), sg_input_port("tracker_out_debug", 5009),
+    #     sg.Text("camera_serial_number_behavior "), sg.Input(
+    #         key="camera_serial_number_behavior",
+    #         size=8,
+    #         default_text="22591117"
+    #     ),
+    # ],
+    # [
+    #     sg.HorizontalSeparator(),
+    # ],
+    # [
+    #     sg.Text("GCaMP Camera: "),
+    #     sg.Text("data_camera_out_gcamp "), sg_input_port("data_camera_out_gcamp", 5006),
+    #     sg.Text("data_stamped_gcamp "), sg_input_port("data_stamped_gcamp", 5007),
+    #     sg.Text("tracker_out_gcamp "), sg_input_port("tracker_out_gcamp", 5008),
+    #     sg.Text("camera_serial_number_gcamp "), sg.Input(
+    #         key="camera_serial_number_gcamp",
+    #         size=8,
+    #         default_text="22591142"
+    #     ),
+    # ],
+    # [
+    #     sg.HorizontalSeparator(),
+    # ],
+    # [
+    #     sg.Text("General: "),
+    #     sg.Text("XInputToZMQPub_out "), sg_input_port("XInputToZMQPub_out", 6000),
+    #     sg.Text("processor_out "), sg_input_port("processor_out", 6001),
+    # ],
     [
         sg.HorizontalSeparator(),
     ],
     [sg.Button('Ok'), sg.Button('Quit')],
-    [
-        sg.Radio(
-            text="Option1",
-            group_id="group_1",
-            default=True,
-            key="group_1_option1"
-        ),
-        sg.Radio(
-            text="Option2",
-            group_id="group_1",
-            default=False,
-            key="group_2_option1"
-        ),
-        sg.Radio(
-            text="Option3",
-            group_id="group_1",
-            default=False,
-            key="group_3_option1"
-        ),
-    ],
-    [
-        sg.Output(
-            size=(150,10),
-            background_color="#000000",
-            text_color="#ffffff",
-            echo_stdout_stderr=True,
-            key="output"
-        ),
-    ],
+    # [
+    #     sg.Radio(
+    #         text="Option1",
+    #         group_id="group_1",
+    #         default=True,
+    #         key="group_1_option1"
+    #     ),
+    #     sg.Radio(
+    #         text="Option2",
+    #         group_id="group_1",
+    #         default=False,
+    #         key="group_2_option1"
+    #     ),
+    #     sg.Radio(
+    #         text="Option3",
+    #         group_id="group_1",
+    #         default=False,
+    #         key="group_3_option1"
+    #     ),
+    # ],
+    # [
+    #     sg.Output(
+    #         size=(150,10),
+    #         background_color="#000000",
+    #         text_color="#ffffff",
+    #         echo_stdout_stderr=True,
+    #         key="output"
+    #     ),
+    # ],
     [
         progress_bar
     ],
+    
     [
         sg.StatusBar(
             text="Status! :wink:",
@@ -249,6 +270,12 @@ layout = [
     ]
 ]
 
+# Register Events
+registered_events = defaultdict(list)
+for element in elements:
+    for event in element.events:
+        registered_events[event].append(element)
+
 # Create the window
 window = sg.Window(
     'Compact Fluerscence Microscope (CFM) GUI',
@@ -256,12 +283,16 @@ window = sg.Window(
 )
 gui_client = GUIClient(port=server_client)
 
+
+
 # Display and interact with the Window using an Event Loop
 N = 0
 while True:
     event, values = window.read()
     print(values)
     print(event)
+    for element in registered_events[event]:
+        element.handle(event = event, **values)
     # See if user wants to quit or window was closed
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         gui_client.running = False
