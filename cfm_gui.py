@@ -100,6 +100,7 @@ progress_bar = sg.ProgressBar(
     key='progressbar'
 )
 layout = [
+    # Start & Stop
     [
         [
             sg.Button('Start'),
@@ -111,47 +112,13 @@ layout = [
     [
         sg.HorizontalSeparator(),
     ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
-    [
-        sg.HorizontalSeparator(),
-    ],
+    # Camera Lighting
     [
         *ui_framerate.elements, *ui_exposure_behavior.elements, *ui_exposure_gfp.elements
     ],
+    # Camera Binning and Size
     [
-        # sg.Text("framerate "),
-        # sg.Input(
-        #     default_text="20.0", size=6, key="framerate_input",
-        #     enable_events=True
-        # ),
-        # sg.Slider(
-        #     range=(0.0, 48.0),
-        #     default_value=20.0,
-        #     resolution=1,
-        #     orientation='h',
-        #     key="framerate_slider"
-        # ),
-        # sg.Text("binsize "), sg_input_port("binsize", 2),
-        # sg.Text("flir_exposure_behavior "), sg_input_port("flir_exposure_behavior", 4500.0),
-        # sg.Text("flir_exposure_gcamp "), sg_input_port("flir_exposure_gcamp", 975000/20),
-        # sg.Text("fmt "), sg.Listbox(
-        #     values=[
-        #         "UINT8_YX_512_512",
-        #         "UINT8_YX_256_256",
-        #         "UINT8_YX_128_128",
-        #     ],
-        #     select_mode=sg.LISTBOX_SELECT_MODE_SINGLE,
-        #     size=(20,3),
-        #     key="fmt"
-        # ),
+        sg.Text("binsize "), sg_input_port("binsize", 2),
         sg.Text("format "), sg.Combo(
             values=[
                 "UINT8_YX_512_512",
