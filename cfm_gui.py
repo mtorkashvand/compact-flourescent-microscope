@@ -25,10 +25,9 @@ from collections import defaultdict
 import PySimpleGUI as sg
 
 from cfm.zmq.client_with_gui import GUIClient
-from cfm.system.cfm_with_gui import run as cfm_with_gui_run
+from cfm.system.cfm_with_gui import CFMwithGUI
 
 from cfm.ui.elements import InputSlider
-## TODO DEBUG CONTINUE FROM HERE: run `cfm_with_gui_run` from here with KWARGS
 
 # Parameters
 forwarder_in = str(5000)
@@ -55,10 +54,11 @@ interpolation_tracking = False
 # Methods
 ## Run CFM with GUI
 def run_cfm_with_gui(**kwargs):
-    cmd = ["cfm_with_gui"]
-    for key, value in kwargs.items():
-        cmd += [ f"--{key}={value}" ]
-    return Popen(cmd)
+    cfm_with_gui = CFMwithGUI(
+        name="cfm_with_gui",
+        **kwargs
+    )
+    return cfm_with_gui
 ## 
 def sg_input_port(key, port):
     return sg.Input(
@@ -268,8 +268,9 @@ while True:
         # Run CLI Client
         gui_client.running = True
         # Run CFM
-        if 'cfm_job' not in locals():
-            cfm_job = run_cfm_with_gui()
+        if 'cfm_with_gui' not in locals():
+            cfm_with_gui = run_cfm_with_gui(**values)
+            cfm_with_gui.run()
         else:
             print('Already running!')
     elif event == 'Stop':
@@ -278,10 +279,10 @@ while True:
         time.sleep(3)
         gui_client.running = False
         # Stop CFM
-        if 'cfm_job' in locals():
-            cfm_job.send_signal(signal.SIGINT)
-            # cfm_job.kill()
-            del cfm_job
+        if 'cfm_with_gui' in locals():
+            cfm_with_gui.kill()
+            print("DEBUG cfm killed")
+            del cfm_with_gui
             print("Process should be killed.")
         else:
             print('Not running!')

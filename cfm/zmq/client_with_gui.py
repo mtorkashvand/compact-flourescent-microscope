@@ -42,7 +42,7 @@ class GUIClient():
         self.socket.connect(address)
 
         self.control_socket = self.context.socket(zmq.PUB)
-        self.control_socket.bind("tcp://*:4862")
+        self.control_socket.bind("tcp://*:4862")  # DEBUG TODO change this to an argument for the class
 
     def recv(self) -> bytes:
         """Receive a reply."""
