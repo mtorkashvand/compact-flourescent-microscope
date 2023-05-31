@@ -112,6 +112,16 @@ elements = [
 ]
 
 
+folder_browser_data = sg.FolderBrowse(
+    button_text = "Browse",
+    target = "data_directory",
+    initial_folder = "."
+)
+folder_browser_logger = sg.FolderBrowse(
+    button_text = "Browse",
+    target = "logger_directory",
+    initial_folder = "."
+)
 progress_bar = sg.ProgressBar(
     max_value=100,
     size=(100,5),
@@ -147,8 +157,10 @@ layout = [
             key="interpolation_tracking",
             default=False
         ),
-        sg.Text("data_directory "), sg_input_port("data_directory", r"C:\src\data"),
-        sg.Text("logger_directory "), sg_input_port("logger_directory", r"C:\src\data"),
+    ],[
+        sg.Text("data_directory: "), folder_browser_data, sg.Input(key="data_directory", default_text=r"C:\src\data", size=130),
+    ],[
+        sg.Text("logger_directory: "), folder_browser_logger, sg.Input(key="logger_directory", default_text=r"C:\src\data", size=130),
     ],
     [
         sg.HorizontalSeparator(),

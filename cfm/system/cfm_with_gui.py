@@ -117,9 +117,9 @@ class CFMwithGUI:
 
         data_directory = self.kwargs['data_directory']  # "C:\src\data"
         logger_directory = self.kwargs['logger_directory']  # "C:\src\data"
-        if not os.path.exists(data_directory):
+        if not os.path.exists(data_directory) and not DEBUG:
             os.makedirs(data_directory)
-        if not os.path.exists(logger_directory):
+        if not os.path.exists(logger_directory) and not DEBUG:
             os.makedirs(logger_directory)
 
         self.jobs.append(Popen(["cfm_processor",
