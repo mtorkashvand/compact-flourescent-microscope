@@ -25,7 +25,7 @@ import PySimpleGUI as sg
 from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import CFMwithGUI
 
-from cfm.ui.elements import InputSlider
+from cfm.ui.elements import InputSlider, CombosJoined
 
 # Parameters
 forwarder_in = str(5000)
@@ -81,12 +81,34 @@ def sg_input_port(key, port):
 # TODO: 
 
 
-ui_framerate = InputSlider('framerate: ', key='--FRAMERATE--', default_value=20, range=(1, 48), type_caster=int)
-ui_exposure_behavior = InputSlider('exposure behavior: ', key='--EXPOSURE-BEHAVIOR--', default_value=18000, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
-ui_exposure_gfp = InputSlider('exposure gfp: ', key='--EXPOSURE-GFP--', default_value=48750, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
+ui_framerate = InputSlider('framerate: ', key='framerate', default_value=20, range=(1, 48), type_caster=int)
+ui_exposure_behavior = InputSlider('exposure behavior: ', key='exposure_behavior', default_value=18000, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
+ui_exposure_gfp = InputSlider('exposure gfp: ', key='exposure_gcamp', default_value=48750, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
+ui_binsize_format = CombosJoined(
+    text1="Binsize: ", text2="Format: ",
+    v1_to_v2s={
+        "1": [
+            "UINT8_YX_1024_1024",
+            "UINT8_YX_512_512",
+            "UINT8_YX_256_256",
+            "UINT8_YX_128_128",
+        ],
+        "2": [
+            "UINT8_YX_512_512",
+            "UINT8_YX_256_256",
+            "UINT8_YX_128_128",
+        ],
+        "4": [
+            "UINT8_YX_256_256",
+            "UINT8_YX_128_128",
+        ],
+    },
+    default_v1="2", default_v2="UINT8_YX_512_512",
+    key1="binsize", key2="format"
+)
 # Add Elements
 elements = [
-    ui_framerate, ui_exposure_behavior, ui_exposure_gfp,
+    ui_framerate, ui_exposure_behavior, ui_exposure_gfp, ui_binsize_format
 ]
 
 
@@ -116,25 +138,17 @@ layout = [
     ],
     # Camera Binning and Size
     [
-        sg.Text("binsize "), sg_input_port("binsize", 2),
-        sg.Text("format "), sg.Combo(
-            values=[
-                "UINT8_YX_512_512",
-                "UINT8_YX_256_256",
-                "UINT8_YX_128_128",
-            ],
-            default_value="UINT8_YX_512_512",
-            size=(20,3),
-            key="format"
-        ),
+        *ui_binsize_format.elements
+    ],
+    [
         sg.Text("teensy_usb_port "), sg_input_port("teensy_usb_port", "COM4"),
         sg.Checkbox(
             text="interpolation_tracking",
             key="interpolation_tracking",
             default=False
         ),
-        sg.Text("data_directory "), sg_input_port("data_directory", "C:\src\data"),
-        sg.Text("logger_directory "), sg_input_port("logger_directory", "C:\src\data"),
+        sg.Text("data_directory "), sg_input_port("data_directory", r"C:\src\data"),
+        sg.Text("logger_directory "), sg_input_port("logger_directory", r"C:\src\data"),
     ],
     [
         sg.HorizontalSeparator(),
@@ -252,12 +266,23 @@ gui_client = GUIClient(port=server_client)
 
 # Display and interact with the Window using an Event Loop
 N = 0
+_n, _duration = 0, 0.0
 while True:
     event, values = window.read()
     # print(values)
     print(event)
+    _start = time.time()
+    # Handle Events
     for element in registered_events[event]:
         element.handle(event = event, **values)
+    # Add Values
+    # Add values from UI element with expected keys in CFMwithGUI
+    for element in elements:
+        element.add_values(values)
+    _end = time.time()
+    _n += 1
+    _duration += (_end - _start)
+    print(f"DEBUG: Cycles: {_n}, Average Process Time: {_duration/_n}")
     # See if user wants to quit or window was closed
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         gui_client.running = False
