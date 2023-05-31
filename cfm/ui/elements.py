@@ -14,22 +14,35 @@ def sg_input_port(key, port):
 
 # Classes
 ## Abstract Element with disable/enable, status
+class AbstractElement:
+    # Constructor
+    def __init__(self) -> None:
+        self.events = set()
+        return
+    # Handle
+    def handle(self, **kwargs):
+        raise NotImplementedError()
+    # Disable
+    def disable(self):
+        raise NotImplementedError()
+    def enable(self):
+        raise NotImplementedError()
 ## Advanced Ports Menu
-class PortsMenu:
+class PortsMenu(AbstractElement):
     # TODO: create all ports inputs in a single element
     # - add toggle functionality to expand/collapse or display/hide ports options
     # Constructor
     def __init__(self) -> None:
         return
 ## Joined Combos
-class CombosJoined:
+class CombosJoined(AbstractElement):
     # TODO: joined two combos based on each other values -> change colors of valid choices
     # e.g. binsize and format (shape of image crop)
     # Constructor
     def __init__(self) -> None:
         return
 ## Joined Input and Slider
-class InputSlider:
+class InputSlider(AbstractElement):
     """Input and slider connected to each other."""
     # Constructor
     def __init__(self, text, key, default_value=0.0, range=(0, 100), resolution=1, size_input=6, type_caster=float) -> None:
