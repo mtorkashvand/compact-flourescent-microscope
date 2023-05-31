@@ -14,6 +14,8 @@ Options:
     --port=PORT           [default: 5002]
 """
 
+DEBUG = True
+
 import time
 import signal
 
@@ -62,7 +64,8 @@ class GUIClient():
         if req_str == "DO shutdown":
             self.running = False
         self.send(coerce_bytes(req_str))
-        print(coerce_string(self.recv()))
+        if not DEBUG:
+            print(coerce_string(self.recv()))
         time.sleep(5)
         self.control_socket.send_string("TERMINATE")
 
