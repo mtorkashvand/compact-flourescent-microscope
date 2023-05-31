@@ -17,8 +17,6 @@
 
 # Modules
 import time
-import signal
-from subprocess import Popen
 
 from collections import defaultdict
 
@@ -256,7 +254,7 @@ gui_client = GUIClient(port=server_client)
 N = 0
 while True:
     event, values = window.read()
-    print(values)
+    # print(values)
     print(event)
     for element in registered_events[event]:
         element.handle(event = event, **values)
