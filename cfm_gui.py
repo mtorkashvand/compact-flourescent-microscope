@@ -24,7 +24,7 @@ import PySimpleGUI as sg
 
 from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import CFMwithGUI
-
+from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import InputSlider, CombosJoined
 
 # Parameters
@@ -215,6 +215,9 @@ layout = [
     #     sg.Text("processor_out "), sg_input_port("processor_out", 6001),
     # ],
     [
+        sg.Image(key="img_frame", size=(512, 512)),
+    ],
+    [
         sg.HorizontalSeparator(),
     ],
     [sg.Button('Ok'), sg.Button('Quit')],
@@ -274,13 +277,22 @@ window = sg.Window(
 )
 gui_client = GUIClient(port=server_client)
 
-
+# Create the dual displayer instance
+dual_displayer = DualDisplayer(
+    data_r=f"L{tracker_out_behavior}",  # displayer port for the behavior data
+    data_g=f"L{tracker_out_gcamp}",  # displayer port for the gcamp data
+    fmt="UINT8_YX_512_512",  # image format accroding to 'array_props_from_string'
+    name="displayer"  # image displayers name start with 'displayer' 
+    )
 
 # Display and interact with the Window using an Event Loop
 N = 0
 _n, _duration = 0, 0.0
 while True:
-    event, values = window.read()
+    event, values = window.read(timeout=10)
+    img_r, img_g, frame = dual_displayer.get_frame(combine=True)
+    frame = cv2.imencode('.png', frame)[1].tobytes()
+    window['img_frame'].update(data=frame)
     # print(values)
     print(event)
     _start = time.time()
