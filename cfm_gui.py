@@ -174,8 +174,8 @@ layout = [
         [
             sg.Button('Start'),
             sg.Button('Stop'),
-            sg.Button('Start Recording'),
-            sg.Button('Stop Recording'),
+            sg.Button('Start Recording', disabled=False),
+            sg.Button('Stop Recording', disabled=True),
         ],
     ],
     [
@@ -390,9 +390,19 @@ while True:
     elif event == 'Start Recording':
         for element in elements:
             element.disable()
+        window['Start Recording'].update(disabled=True)
+        window['Stop Recording'].update(disabled=False)
+        client_cli_cmd = f"DO _writer_start"
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
     elif event == 'Stop Recording':
         for element in elements:
             element.enable()
+        window['Start Recording'].update(disabled=False)
+        window['Stop Recording'].update(disabled=True)
+        client_cli_cmd = f"DO _writer_stop"
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
     elif event == 'led_ir_checkbox':
         # TODO set LED Optogenetics power
         state_str = "n" if values['led_ir_checkbox'] else "f"
@@ -425,7 +435,6 @@ window.close()
 # - remove exposure slider
 # - z-axis speed -> L1,R1 on GamePad
 # - movement in X/Y/Z directions (fast/slow)
-# - GamePad buttons: Y,X,A,B
 
 
 if __name__ == '__main__':
