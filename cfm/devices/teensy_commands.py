@@ -117,6 +117,9 @@ class TeensyCommandsDevice():
         state_str = "n" if not self.led_state else "f"
         self._execute("toggle_led_behavior", state=state_str)
         self.led_state = not self.led_state
+    def toggle_led_set(self, state_str):
+        self._execute("toggle_led_behavior", state=state_str)
+        self.led_state = not self.led_state
     ## Set
     def set_led(self, led_name, intensity):
         # DEBUG

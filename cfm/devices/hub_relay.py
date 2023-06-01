@@ -198,8 +198,10 @@ class WormTrackerHub(Hub):
     def _teensy_commands_shutdown(self):
         self.send("teensy_commands shutdown")
 
-    def _teensy_commands_set_led(self, led_status):
-        self.send("teensy_commands set_led {}".format(led_status))
+    def _teensy_commands_set_led(self, led_name, intensity):
+        self.send("teensy_commands set_led {} {}".format(led_name, intensity))
+    def _teensy_commands_set_toggle_led(self, state_str):
+        self.send("teensy_commands toggle_led_set {}".format(state_str))
 
     def _teensy_commands_movex(self, xvel):
         self.send("teensy_commands movex {}".format(xvel))

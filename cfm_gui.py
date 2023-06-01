@@ -203,56 +203,32 @@ layout = [
     ],
     [
         sg.HorizontalSeparator(),
+    ], [  # LED Controls
+        sg.Checkbox(
+            text="LED IR",
+            key="led_ir_checkbox",
+            default=False,
+            enable_events=True
+        ),
+        sg.Text("LED GCaMP Power (0-255): "),
+        sg.Slider(
+            key="led_slider_gcamp",
+            range=(0, 255),
+            default_value=0,
+            resolution=1,
+            orientation='h',
+            enable_events=True
+        ),
+        sg.Text("LED Optogenetics Power (0-255): "),
+        sg.Slider(
+            key="led_slider_optogenetics",
+            range=(0, 255),
+            default_value=0,
+            resolution=1,
+            orientation='h',
+            enable_events=True
+        ),
     ],
-    # [
-    #     sg.Text("Forwarder Ports: "),
-    #     sg.Text("forwarder_in "), sg_input_port("forwarder_in", 5000),
-    #     sg.Text("forwarder_out "), sg_input_port("forwarder_out", 5001),
-    # ],
-    # [
-    #     sg.HorizontalSeparator(),
-    # ],
-    # [
-    #     sg.Text("Server Client Ports: "),
-    #     sg_input_port("server_client", 5002),
-    # ],
-    # [
-    #     sg.HorizontalSeparator(),
-    # ],
-    # [
-    #     sg.Text("Behavior Camera: "),
-    #     sg.Text("data_camera_out_behavior "), sg_input_port("data_camera_out_behavior", 5003),
-    #     sg.Text("data_stamped_behavior "), sg_input_port("data_stamped_behavior", 5004),
-    #     sg.Text("tracker_out_behavior "), sg_input_port("tracker_out_behavior", 5005),
-    #     sg.Text("tracker_out_debug "), sg_input_port("tracker_out_debug", 5009),
-    #     sg.Text("camera_serial_number_behavior "), sg.Input(
-    #         key="camera_serial_number_behavior",
-    #         size=8,
-    #         default_text="22591117"
-    #     ),
-    # ],
-    # [
-    #     sg.HorizontalSeparator(),
-    # ],
-    # [
-    #     sg.Text("GCaMP Camera: "),
-    #     sg.Text("data_camera_out_gcamp "), sg_input_port("data_camera_out_gcamp", 5006),
-    #     sg.Text("data_stamped_gcamp "), sg_input_port("data_stamped_gcamp", 5007),
-    #     sg.Text("tracker_out_gcamp "), sg_input_port("tracker_out_gcamp", 5008),
-    #     sg.Text("camera_serial_number_gcamp "), sg.Input(
-    #         key="camera_serial_number_gcamp",
-    #         size=8,
-    #         default_text="22591142"
-    #     ),
-    # ],
-    # [
-    #     sg.HorizontalSeparator(),
-    # ],
-    # [
-    #     sg.Text("General: "),
-    #     sg.Text("XInputToZMQPub_out "), sg_input_port("XInputToZMQPub_out", 6000),
-    #     sg.Text("processor_out "), sg_input_port("processor_out", 6001),
-    # ],
     [
         sg.Image(key="img_frame_r", size=(512, 512)),
         sg.Image(key="img_frame_g", size=(512, 512)),
@@ -269,35 +245,6 @@ layout = [
         sg.Button('Execute'),
         sg.Input(default_text="DO shutdown", size=50, key="client_cli"),
     ],
-    # [
-    #     sg.Radio(
-    #         text="Option1",
-    #         group_id="group_1",
-    #         default=True,
-    #         key="group_1_option1"
-    #     ),
-    #     sg.Radio(
-    #         text="Option2",
-    #         group_id="group_1",
-    #         default=False,
-    #         key="group_2_option1"
-    #     ),
-    #     sg.Radio(
-    #         text="Option3",
-    #         group_id="group_1",
-    #         default=False,
-    #         key="group_3_option1"
-    #     ),
-    # ],
-    # [
-    #     sg.Output(
-    #         size=(150,10),
-    #         background_color="#000000",
-    #         text_color="#ffffff",
-    #         echo_stdout_stderr=True,
-    #         key="output"
-    #     ),
-    # ],
     [
         progress_bar
     ],
@@ -343,6 +290,7 @@ def zero_displayers():
     window.refresh()
 zero_displayers()
 # Display and interact with the Window using an Event Loop
+# DEBUG TODO:  change code to have different `elements`` for each functionality, e.g. like CombosJoined
 N = 0
 _n, _duration = 0, 0.0
 CAMERA_RUNNING = False
@@ -445,6 +393,24 @@ while True:
     elif event == 'Stop Recording':
         for element in elements:
             element.enable()
+    elif event == 'led_ir_checkbox':
+        # TODO set LED Optogenetics power
+        state_str = "n" if values['led_ir_checkbox'] else "f"
+        client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event.startswith("led_slider_gcamp"):
+        # TODO set LED GCaMP power
+        led_name, intensity = "g", int(values['led_slider_optogenetics'])
+        client_cli_cmd = f"DO _teensy_commands_set_led {led_name} {intensity}"
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event.startswith("led_slider_optogenetics"):
+        # TODO set LED Optogenetics power
+        led_name, intensity = "o", int(values['led_slider_optogenetics'])
+        client_cli_cmd = f"DO _teensy_commands_set_led {led_name} {intensity}"
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
     
     # Output a message to the window
     N = min(N+1, 100)
@@ -456,8 +422,6 @@ while True:
 window.close()
 
 # Elements to add:
-# - LED IR: on/off toglle
-# - LED GFP/Optogenetic: InputSlider
 # - remove exposure slider
 # - z-axis speed -> L1,R1 on GamePad
 # - movement in X/Y/Z directions (fast/slow)
