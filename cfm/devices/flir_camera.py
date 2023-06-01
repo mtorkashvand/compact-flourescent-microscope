@@ -286,16 +286,22 @@ class  FlirCamera():
              self.publish_status()
 
     def set_exposure_framerate(self, exposure, framerate):
+        _runner_flag = self.running
         if self.running:
              self.stop()
         self.exposure_time, self.frame_rate = self._set_exposure_time_and_frame_rate(exposure, framerate)
         self.publish_status()
+        if _runner_flag:
+            self.start()
 
     def set_region(self, z, y, x, binsize, y_offset=None, x_offset=None):
+        _runner_flag = self.running
         if self.running:
              self.stop()
         self.depth, self.height, self.width, self.binsize = self.set_shape(z, y, x, binsize, y_offset, x_offset)
         self.publish_status()
+        if _runner_flag:
+            self.start()
 
     
 

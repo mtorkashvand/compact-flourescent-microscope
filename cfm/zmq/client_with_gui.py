@@ -14,7 +14,7 @@ Options:
     --port=PORT           [default: 5002]
 """
 
-DEBUG = True
+DEBUG = False
 
 import time
 import signal
@@ -61,13 +61,14 @@ class GUIClient():
         it to a server, and return the reply."""
         if not self.running:
             return
-        if req_str == "DO shutdown":
-            self.running = False
         self.send(coerce_bytes(req_str))
         if not DEBUG:
             print(coerce_string(self.recv()))
-        time.sleep(5)
-        self.control_socket.send_string("TERMINATE")
+        if req_str == "DO shutdown":
+            self.running = False
+            time.sleep(1)
+            self.control_socket.send_string("TERMINATE")
+        
 
 
     def run(self):

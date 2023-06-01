@@ -12,7 +12,7 @@ Different Camera Configuration Serial Numbers:
 - 22591142, 22591117
 """
 
-DEBUG = True
+DEBUG = False
 
 import os
 
@@ -49,11 +49,12 @@ class CFMwithGUI:
     # Constructor
     def __init__(self, name, **kwargs) -> None:
         # DEBUG
-        print("\n\nDEBUG CFM WITH GUI KWARGS:")
-        print({
-            k:v for k,v in CFMwithGUI.DEFAUL_KWARGS.items() if k not in kwargs
-        })
-        print("\n\n")
+        if DEBUG:
+            print("\n\nDEBUG CFM WITH GUI KWARGS:")
+            print({
+                k:v for k,v in CFMwithGUI.DEFAUL_KWARGS.items() if k not in kwargs
+            })
+            print("\n\n")
         self.kwargs = CFMwithGUI.DEFAUL_KWARGS.copy()
         for key,value in kwargs.items():
             self.kwargs[key] = value
@@ -189,7 +190,8 @@ class CFMwithGUI:
                             f"--status_out=L{forwarder_in}",
                             f"--data_out={data_stamped_gcamp}",
                             f"--format={format}",
-                            f"--name=data_hub_gcamp"]))
+                            f"--name=data_hub_gcamp",
+                            "--flip_image"]))  # TODO: convert to an argument coming from GUI
 
         # Writers
         ## Behavior
@@ -212,18 +214,18 @@ class CFMwithGUI:
                             f"--name=writer_gcamp"]))
 
         # Display
-        ## Behavior
-        self.jobs.append(Popen(["cfm_displayer",
-                            f"--inbound=L{tracker_out_behavior}",
-                            f"--format={format}",
-                            f"--commands=L{forwarder_out}",
-                            f"--name=displayer_behavior"]))
-        ## GCaMP
-        self.jobs.append(Popen(["cfm_displayer",
-                            f"--inbound=L{tracker_out_gcamp}",
-                            f"--format={format}",
-                            f"--commands=L{forwarder_out}",
-                            f"--name=displayer_gcamp"]))
+        # ## Behavior
+        # self.jobs.append(Popen(["cfm_displayer",
+        #                     f"--inbound=L{tracker_out_behavior}",
+        #                     f"--format={format}",
+        #                     f"--commands=L{forwarder_out}",
+        #                     f"--name=displayer_behavior"]))
+        # ## GCaMP
+        # self.jobs.append(Popen(["cfm_displayer",
+        #                     f"--inbound=L{tracker_out_gcamp}",
+        #                     f"--format={format}",
+        #                     f"--commands=L{forwarder_out}",
+        #                     f"--name=displayer_gcamp"]))
         ## Debug Display
         self.jobs.append(Popen(["cfm_displayer",
                             f"--inbound=L{tracker_out_debug}",

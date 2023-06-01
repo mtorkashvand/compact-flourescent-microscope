@@ -185,11 +185,6 @@ class XInputProcessor():
         messages = self.get_events_from_states(self.current_state, new_state)
         for msg in messages:
             self.publisher.send(msg)
-        # DEBUG
-        _tmp = new_state._asdict()
-        for _key, _value in self.current_state._asdict().items():
-            if _tmp[_key] != _value:
-                print(_key, _value)
         # Update Internal State
         self.current_state = new_state
         return

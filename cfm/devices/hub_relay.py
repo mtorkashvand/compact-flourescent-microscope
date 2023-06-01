@@ -169,8 +169,11 @@ class WormTrackerHub(Hub):
     def _flir_camera_set_exposure_framerate_behavior(self, exposure, rate):
         # TODO: separate functions for cameras?
         self.send("FlirCameraBehavior set_exposure_framerate {} {}".format(exposure, rate))
-        time.sleep(1)
-        self._flir_camera_start_behavior()
+        # time.sleep(1)
+        # self._flir_camera_start_behavior()
+    def _flir_camera_set_exposure_framerate_gcamp(self, exposure, rate):
+        # TODO: separate functions for cameras?
+        self.send("FlirCameraGCaMP set_exposure_framerate {} {}".format(exposure, rate))
 
     # def _flir_camera_set_height(self, height):
     #     # TODO: separate functions for cameras?
@@ -185,8 +188,10 @@ class WormTrackerHub(Hub):
     def _flir_camera_set_shape(self, z, y, x, b):
         self.send("FlirCameraBehavior set_region {} {} {} {}".format(z, y, x, b))
         self.send("FlirCameraGCaMP set_region {} {} {} {}".format(z, y, x, b))
+
     def _flir_camera_set_region_behavior(self, z, y, x, b, offsety, offsetx):
         self.send("FlirCameraBehavior set_region {} {} {} {} {} {}".format(z, y, x, b, offsety, offsetx))
+
     def _flir_camera_set_region_gcamp(self, z, y, x, b, offsety, offsetx):
         self.send("FlirCameraGCaMP set_region {} {} {} {} {} {}".format(z, y, x, b, offsety, offsetx))
 

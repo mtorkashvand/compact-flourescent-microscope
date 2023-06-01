@@ -20,14 +20,19 @@ import time
 
 from collections import defaultdict
 
+import numpy as np
+import cv2 as cv
+
 import PySimpleGUI as sg
 
 from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
-from cfm.ui.elements import InputSlider, CombosJoined
+from cfm.ui.elements import InputSlider, CombosJoined, InputWithIncrements
 
 # Parameters
+DEBUG = False
+
 forwarder_in = str(5000)
 forwarder_out = str(5001)
 server_client = str(5002)
@@ -106,9 +111,43 @@ ui_binsize_format = CombosJoined(
     default_v1="2", default_v2="UINT8_YX_512_512",
     key1="binsize", key2="format"
 )
+ui_offset_behavior_x = InputWithIncrements(
+    text = "Offset Behavior X: ",
+    key="offset_behavior_x",
+    default_value=-10,
+    bounds=[-224, 224],
+    increments=[-10,-2,2,10],
+    type_caster=int
+)
+ui_offset_behavior_y = InputWithIncrements(
+    text = "Offset Behavior Y: ",
+    key="offset_behavior_y",
+    default_value=-44,
+    bounds=[-44, 44],
+    increments=[-10,-2,2,10],
+    type_caster=int
+)
+ui_offset_gcamp_x = InputWithIncrements(
+    text = "Offset GCaMP X: ",
+    key="offset_gcamp_x",
+    default_value=-36,
+    bounds=[-224, 224],
+    increments=[-10,-2,2,10],
+    type_caster=int
+)
+ui_offset_gcamp_y = InputWithIncrements(
+    text = "Offset GCaMP Y: ",
+    key="offset_gcamp_y",
+    default_value=44,
+    bounds=[-44, 44],
+    increments=[-10,-2,2,10],
+    type_caster=int
+)
 # Add Elements
 elements = [
-    ui_framerate, ui_exposure_behavior, ui_exposure_gfp, ui_binsize_format
+    ui_framerate, ui_exposure_behavior, ui_exposure_gfp, ui_binsize_format,
+    ui_offset_behavior_x, ui_offset_behavior_y,
+    ui_offset_gcamp_x, ui_offset_gcamp_y,
 ]
 
 
@@ -135,8 +174,8 @@ layout = [
         [
             sg.Button('Start'),
             sg.Button('Stop'),
-            sg.Button('Execute'),
-            sg.Input(default_text="DO shutdown", size=50, key="client_cli"),
+            sg.Button('Start Recording'),
+            sg.Button('Stop Recording'),
         ],
     ],
     [
@@ -215,12 +254,21 @@ layout = [
     #     sg.Text("processor_out "), sg_input_port("processor_out", 6001),
     # ],
     [
-        sg.Image(key="img_frame", size=(512, 512)),
-    ],
-    [
+        sg.Image(key="img_frame_r", size=(512, 512)),
+        sg.Image(key="img_frame_g", size=(512, 512)),
+    ],[
+        *ui_offset_behavior_x.elements, *ui_offset_behavior_y.elements,
+    ],[
+        *ui_offset_gcamp_x.elements, *ui_offset_gcamp_y.elements,
+    ],[
         sg.HorizontalSeparator(),
     ],
-    [sg.Button('Ok'), sg.Button('Quit')],
+    [
+        sg.Button('Ok'),
+        sg.Button('Quit'),
+        sg.Button('Execute'),
+        sg.Input(default_text="DO shutdown", size=50, key="client_cli"),
+    ],
     # [
     #     sg.Radio(
     #         text="Option1",
@@ -275,27 +323,43 @@ window = sg.Window(
     'Compact Fluerscence Microscope (CFM) GUI',
     layout
 )
+window.finalize()
 gui_client = GUIClient(port=server_client)
 
 # Create the dual displayer instance
 dual_displayer = DualDisplayer(
+    window=window,
     data_r=f"L{tracker_out_behavior}",  # displayer port for the behavior data
     data_g=f"L{tracker_out_gcamp}",  # displayer port for the gcamp data
     fmt="UINT8_YX_512_512",  # image format accroding to 'array_props_from_string'
     name="displayer"  # image displayers name start with 'displayer' 
     )
 
+def zero_displayers():
+    _tmp = np.zeros((512,512),dtype=np.uint8)
+    _tmp = cv.imencode('.png', _tmp)[1].tobytes()
+    window['img_frame_r'].update(data=_tmp)
+    window['img_frame_g'].update(data=_tmp)
+    window.refresh()
+zero_displayers()
 # Display and interact with the Window using an Event Loop
 N = 0
 _n, _duration = 0, 0.0
+CAMERA_RUNNING = False
 while True:
-    event, values = window.read(timeout=10)
-    img_r, img_g, frame = dual_displayer.get_frame(combine=True)
-    frame = cv2.imencode('.png', frame)[1].tobytes()
-    window['img_frame'].update(data=frame)
-    # print(values)
-    print(event)
-    _start = time.time()
+    if CAMERA_RUNNING:
+        event, values = window.read(timeout=10)
+        img_r, img_g, img_combined = dual_displayer.get_frame(combine=True)
+        frame_r = cv.imencode('.png', img_combined)[1].tobytes()
+        frame_g = cv.imencode('.png', img_g)[1].tobytes()
+        window['img_frame_r'].update(data=frame_r)
+        window['img_frame_g'].update(data=frame_g)
+    else:
+        event, values = window.read()
+    if DEBUG:
+        print(values)
+        print(event)
+        _start = time.time()
     # Handle Events
     for element in registered_events[event]:
         element.handle(event = event, **values)
@@ -303,16 +367,20 @@ while True:
     # Add values from UI element with expected keys in CFMwithGUI
     for element in elements:
         element.add_values(values)
-    _end = time.time()
-    _n += 1
-    _duration += (_end - _start)
-    print(f"DEBUG: Cycles: {_n}, Average Process Time: {_duration/_n}")
+    if DEBUG:
+        _end = time.time()
+        _n += 1
+        _duration += (_end - _start)
+        print(f"DEBUG: Cycles: {_n}, Average Process Time: {_duration/_n}")
     # See if user wants to quit or window was closed
     if event == sg.WINDOW_CLOSED or event == 'Quit':
+        zero_displayers()
+        CAMERA_RUNNING = False
         gui_client.running = False
         break
     elif event == 'Start':
         # Run CLI Client
+        CAMERA_RUNNING = True
         gui_client.running = True
         # Run CFM
         if 'cfm_with_gui' not in locals():
@@ -322,13 +390,17 @@ while True:
             print('Already running!')
     elif event == 'Stop':
         # Stop CLI Client
+        zero_displayers()
+        CAMERA_RUNNING = False
         gui_client.process("DO shutdown")
-        time.sleep(3)
+        dual_displayer.reset_buffers()
+        time.sleep(0.5)
         gui_client.running = False
         # Stop CFM
         if 'cfm_with_gui' in locals():
             cfm_with_gui.kill()
-            print("DEBUG cfm killed")
+            if DEBUG:
+                print("DEBUG cfm killed")
             del cfm_with_gui
             print("Process should be killed.")
         else:
@@ -337,8 +409,44 @@ while True:
         client_cli_cmd = values['client_cli']
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
+    elif event.startswith("offset_behavior"):
+        print("DEBUG I'M BHEAVIOR!!!")
+        offset_bx = 224 + values['offset_behavior_x']
+        offset_by = 44 + values['offset_behavior_y']
+        client_cli_cmd = "DO _flir_camera_set_region_behavior 1 512 512 2 {} {}".format(
+            offset_by, offset_bx
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event.startswith("offset_gcamp"):
+        print("DEBUG I'M GCAMP!!!")
+        offset_gx = 224 + values['offset_gcamp_x']
+        offset_gy = 44 + values['offset_gcamp_y']
+        client_cli_cmd = "DO _flir_camera_set_region_gcamp 1 512 512 2 {} {}".format(
+            offset_gy, offset_gx
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event.startswith("exposure_behavior"):
+        client_cli_cmd = "DO _flir_camera_set_exposure_framerate_behavior {} {}".format(
+            values["exposure_behavior"], values["framerate"] 
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event.startswith("exposure_gcamp"):
+        client_cli_cmd = "DO _flir_camera_set_exposure_framerate_gcamp {} {}".format(
+            values["exposure_gcamp"], values["framerate"] 
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        gui_client.process(client_cli_cmd)
+    elif event == 'Start Recording':
+        for element in elements:
+            element.disable()
+    elif event == 'Stop Recording':
+        for element in elements:
+            element.enable()
+    
     # Output a message to the window
-    print('\n'*3)
     N = min(N+1, 100)
     window.find_element(key="progressbar").update(
         current_count = N
@@ -347,6 +455,13 @@ while True:
 # Finish up by removing from the screen
 window.close()
 
+# Elements to add:
+# - LED IR: on/off toglle
+# - LED GFP/Optogenetic: InputSlider
+# - remove exposure slider
+# - z-axis speed -> L1,R1 on GamePad
+# - movement in X/Y/Z directions (fast/slow)
+# - GamePad buttons: Y,X,A,B
 
 
 if __name__ == '__main__':

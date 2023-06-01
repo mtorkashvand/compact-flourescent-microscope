@@ -1,4 +1,5 @@
 # Modules
+from typing import Dict, List
 from collections import defaultdict
 import PySimpleGUI as sg
 
@@ -27,15 +28,70 @@ class AbstractElement:
     # Disable
     def disable(self):
         for element in self.elements:
-            element.update(disabled=True)
+            try:
+                element.update(disabled=True)
+            except Exception as e:
+                pass
         return
     def enable(self):
         for element in self.elements:
-            element.update(disabled=False)
+            try:
+                element.update(disabled=False)
+            except Exception as e:
+                pass
         return
     # Values
     def add_values(self, values):
         raise NotImplementedError()
+## 
+class InputWithIncrements(AbstractElement):
+    # Constructor
+    def __init__(self, text:str, key: str, default_value: int, increments: List[int] = [-1, 1], bounds: List[int] = [-1024, 1024], type_caster=int) -> None:
+        self.text = text
+        self.default_value = default_value
+        self.bounds = bounds
+        self.bound_lower = min(self.bounds)
+        self.bound_upper = max(self.bounds)
+        self.key = key
+        self.increments =  increments
+        self.type_caster = type_caster
+        self.key_to_offset = {
+            f"{key}--{inc}": inc for inc in self.increments
+        }
+        self.events = set(self.key_to_offset)
+        self.events.add(self.key)
+        self.input = sg.Input(default_text=self.default_value, key=key, size=5)
+        self.elements = [
+            sg.Text(self.text)
+        ] + [
+            sg.Button(button_text=f"{inc}",key=event) for event, inc in self.key_to_offset.items() if inc < 0
+        ] + [ self.input ] + [
+            sg.Button(button_text=f"{inc}",key=event) for event, inc in self.key_to_offset.items() if inc > 0
+        ]
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key:
+            pass
+        else:
+            inc = self.key_to_offset[event]
+            value_current = self.type_caster( kwargs[self.key] )
+            value_new = min(
+                self.bound_upper,
+                max(
+                    self.bound_lower,
+                    value_current + inc
+                )
+            )
+            self.input.update(value = value_new)
+        return
+    # Values
+    def add_values(self, values):
+        values[self.key] = self.type_caster(
+            self.input.get()
+        )
+        return
 ## Advanced Ports Menu
 class PortsMenu(AbstractElement):
     # TODO: create all ports inputs in a single element
@@ -48,7 +104,7 @@ class CombosJoined(AbstractElement):
     # TODO: joined two combos based on each other values -> change colors of valid choices
     # e.g. binsize and format (shape of image crop)
     # Constructor
-    def __init__(self, text1: str, text2: str, v1_to_v2s: dict[str, str], default_v1: str, default_v2: str, key1: str, key2: str) -> None:
+    def __init__(self, text1: str, text2: str, v1_to_v2s: Dict[str, str], default_v1: str, default_v2: str, key1: str, key2: str) -> None:
         # Parameters
         self.v1_to_v2s = {
             k: sorted(v) for k,v in v1_to_v2s.items()

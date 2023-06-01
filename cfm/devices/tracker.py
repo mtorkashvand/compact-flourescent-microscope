@@ -266,8 +266,8 @@ class TrackerDevice():
         self.isN = False
         # print("interpolation tracking is {}".format(interpolation_tracking))
         ## Tracker Class
-        # self.xytracker = XYTrackerThreshold(tracker = self)
-        self.xytracker = XYTrackerRatio(tracker = self)
+        self.xytracker = XYTrackerThreshold(tracker = self)
+        # self.xytracker = XYTrackerRatio(tracker = self)
 
 
         np.seterr(divide = 'ignore')
