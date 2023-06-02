@@ -62,6 +62,8 @@ class TeensyCommandsDevice():
         self.led_names = ['b', 'o', 'g']
         self.led_idx_current = 0
 
+        self.coords = [0]*6
+
         self.command_subscriber = ObjectSubscriber(
             obj=self,
             name=name,
@@ -93,8 +95,11 @@ class TeensyCommandsDevice():
     def movez(self, zvel):
         self._execute("sz", zvel=zvel)
 
-    def update_position(self):
+    def update_coordinates(self):
         self.status_publisher.send("logger "+ json.dumps({"position": [self.x, self.y, self.z]}, default=int))
+
+    def log(self, msg):
+        self.status_publisher.send("logger "+ str(msg))
 
     def disable(self):
         self._execute("disable")
@@ -110,6 +115,20 @@ class TeensyCommandsDevice():
     def get_curr_pos(self, name):
         self._execute("get_pos")
         self.status_publisher.send(f"{name} set_curr_pos {self.x} {self.y} {self.z}")
+    
+    @property
+    def x(self):
+        return self.coords[0]
+    def y(self):
+        return self.coords[1]
+    def z(self):
+        return self.coords[2]
+    def vx(self):
+        return self.coords[3]
+    def vy(self):
+        return self.coords[4]
+    def vz(self):
+        return self.coords[5]
 
     # LEDs
     ## Toggle
@@ -177,16 +196,17 @@ class TeensyCommandsDevice():
     def _execute(self, cmd: str, **kwargs):
         cmd_format_string = self._COMMANDS[cmd]
         formatted_string = cmd_format_string.format(**kwargs)
+        self.log(f"<TEENSY COMMANDS> executing: {formatted_string}")
         reply = b''
         self.serial_obj.write(bytes(formatted_string, "ascii"))
         while not reply:
             reply = self.serial_obj.readline()
-        pos = reply.decode("utf-8")[:-1].split(" ")
+        coords = reply.decode("utf-8")[:-1].split(" ")
         # DEBUG
         # print(f"cmd: {formatted_string}")
         # print(f"pos: {pos}")
-        self.x, self.y, self.z = [int(coord) for coord in pos]
-        self.update_position()
+        self.coords = [int(coord) for coord in coords]
+        self.update_coordinates()
 
     def run(self):
         """Starts a loop and receives and processes a message."""

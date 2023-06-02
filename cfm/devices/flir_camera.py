@@ -206,6 +206,7 @@ class  FlirCamera():
              node_acquisition_frame_rate.SetValue(frame_rate)
 
         self.first_time_in_loop = 1
+        self.publish_status()
         return node_exposure_time.GetValue(), node_acquisition_frame_rate.GetValue()
 
 
@@ -257,6 +258,7 @@ class  FlirCamera():
         print(y_offset, x_offset)
 
         self.first_time_in_loop = 1
+        self.publish_status()
         return depth, node_height.GetValue(), node_width.GetValue(), node_binning_vertical.GetValue()
 
     def shutdown(self):
@@ -290,7 +292,6 @@ class  FlirCamera():
         if self.running:
              self.stop()
         self.exposure_time, self.frame_rate = self._set_exposure_time_and_frame_rate(exposure, framerate)
-        self.publish_status()
         if _runner_flag:
             self.start()
 
@@ -299,7 +300,6 @@ class  FlirCamera():
         if self.running:
              self.stop()
         self.depth, self.height, self.width, self.binsize = self.set_shape(z, y, x, binsize, y_offset, x_offset)
-        self.publish_status()
         if _runner_flag:
             self.start()
 

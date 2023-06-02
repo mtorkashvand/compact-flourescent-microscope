@@ -271,7 +271,7 @@ window = sg.Window(
     layout
 )
 window.finalize()
-gui_client = GUIClient(port=server_client)
+gui_client = GUIClient(port=server_client, port_forwarder_in=forwarder_in)
 
 # Create the dual displayer instance
 dual_displayer = DualDisplayer(

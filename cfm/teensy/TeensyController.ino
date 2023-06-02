@@ -197,11 +197,20 @@ void loop()
     x=stepperX.currentPosition();
     y=stepperY.currentPosition();
     z=stepperZ.currentPosition();
+    vx=stepperX.speed();
+    vy=stepperY.speed();
+    vz=stepperZ.speed();
     Serial.print(x);
     Serial.print(" ");
     Serial.print(y);
     Serial.print(" ");
     Serial.print(z);
+    Serial.print(" ");
+    Serial.print(vx);
+    Serial.print(" ");
+    Serial.print(vy);
+    Serial.print(" ");
+    Serial.print(vz);
     Serial.print("\n");
 //    Serial.send_now();
   }
