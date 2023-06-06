@@ -195,6 +195,59 @@ class LEDCompound(AbstractElement):
         if not self.toggle:
             return 0
         return self.input_as.get()
+## LED IR
+class LEDIR(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self,
+            button_text: str = 'IR LED - Icon',
+            text:str = 'Toggle IR LED',
+            key: str = 'led_ir',
+            color_off: str = '#ff0000', color_on: str = "#00ff00",
+            type_caster = int,
+            bounds=(None, None)
+        ) -> None:
+        super().__init__()
+        self.color_on = color_on
+        self.color_off = color_off
+        self.button_text = button_text
+        self.bounds = bounds
+        self.key = key
+        self.key_toggle = f"{self.key}-TOGGLE"
+        self.button = sg.Button(
+            button_text=self.button_text,
+            key=self.key_toggle,
+            button_color=color_off
+        )
+        self.text = sg.Text(
+            text=text
+        )
+        self.input = sg.Input(default_text='255', size=3, disabled=True, key='')
+        self.elements = [
+            self.button, self.text, self.input
+        ]
+        self.events = {
+            self.key_toggle
+        }
+        self.toggle = False
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key_toggle:
+            self.toggle = not self.toggle
+            button_color = self.color_on if self.toggle else self.color_off
+            self.button.update(button_color=button_color)
+        state_str = "n" if self.toggle else "f"
+        client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
+        print(f"Executing: '{client_cli_cmd}'")
+        self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return self.toggle
 ## Exposure Combined Elements
 class ExposureCompound(AbstractElement):
     # Cosntructor

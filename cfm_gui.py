@@ -30,7 +30,7 @@ from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (
     InputSlider, CombosJoined, InputWithIncrements, ReturnHandler,
-    LEDCompound, ExposureCompound, FramerateCompound
+    LEDCompound, ExposureCompound, FramerateCompound, LEDIR
 )
 
 # Parameters
@@ -153,6 +153,7 @@ ui_led_opt = LEDCompound(
     button_text='led-O', text='LED Optogenetics', key='led_opt', led_name='o',
     bounds=(0,255)
 )
+ui_led_ir = LEDIR()
 ui_exposure_gfp = ExposureCompound(
     button_text='exposure-gcamp', text='Exposure GFP',
     key='exposure_gcamp',
@@ -173,8 +174,7 @@ ui_framerate = FramerateCompound(
 # Add Elements
 elements = [
     ui_return_handler,
-    ui_led_gfp,
-    ui_led_opt,
+    ui_led_gfp, ui_led_opt, ui_led_ir,
     ui_framerate, ui_binsize_format,
     ui_offset_behavior_x, ui_offset_behavior_y,
     ui_offset_gcamp_x, ui_offset_gcamp_y,
@@ -207,10 +207,6 @@ progress_bar = sg.ProgressBar(
 layout = [
     [
         *ui_return_handler.elements,
-    ],
-    [
-        *ui_led_gfp.elements,
-        *ui_led_opt.elements,
     ],
     # Start & Stop
     [
@@ -247,30 +243,9 @@ layout = [
     [
         sg.HorizontalSeparator(),
     ], [  # LED Controls
-        sg.Checkbox(
-            text="LED IR",
-            key="led_ir_checkbox",
-            default=False,
-            enable_events=True
-        ),
-        sg.Text("LED GCaMP Power (0-255): "),
-        sg.Slider(
-            key="led_slider_gcamp",
-            range=(0, 255),
-            default_value=0,
-            resolution=1,
-            orientation='h',
-            enable_events=True
-        ),
-        sg.Text("LED Optogenetics Power (0-255): "),
-        sg.Slider(
-            key="led_slider_optogenetics",
-            range=(0, 255),
-            default_value=0,
-            resolution=1,
-            orientation='h',
-            enable_events=True
-        ),
+        *ui_led_ir.elements,
+        *ui_led_gfp.elements,
+        *ui_led_opt.elements,
     ],
     [
         sg.Image(key="img_frame_r", size=(512, 512)),
@@ -310,7 +285,7 @@ for element in elements:
 
 # Create the window
 window = sg.Window(
-    'Compact Fluerscence Microscope (CFM) GUI',
+    'OpenAutoScope2.0 GUI',
     layout,
     finalize=True
 )
