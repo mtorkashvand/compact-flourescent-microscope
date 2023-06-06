@@ -74,6 +74,9 @@ class  FlirCamera():
         self.dtype = np.uint8
         self.initiated = 0
         self.acquisition_status = False
+        self.running = None
+        self.depth, self.height, self.width, self.binsize = None, None, None, None
+        self.exposure_time, self.frame_rate = None, None
 
         self.command_subscriber = ObjectSubscriber(
             obj=self,
@@ -255,7 +258,7 @@ class  FlirCamera():
             print(f"Invalid x_offsets catched! :wink:\n{str(e)}")
 
         # DEBUG
-        print(y_offset, x_offset)
+        # print(y_offset, x_offset)
 
         self.first_time_in_loop = 1
         self.publish_status()
@@ -325,13 +328,19 @@ class  FlirCamera():
                 self.command_subscriber.process(msg)
 
             elif self.running:
-                
-                cam_buffer_image = self.cam.GetNextImage(1000)
-                if not cam_buffer_image.IsIncomplete():
-                    data = self.processor.Convert(cam_buffer_image, PySpin.PixelFormat_Mono8)
-                cam_buffer_image.Release()
-                self.data_publisher.send(data.GetData())
-                del data
+                #  Added try/except to avoid 'Failed waiting for EventData on NEW_BUFFER_DATA event' error
+                #  Accroding to the support team: "This error occurs when trying to retrieve an image from the buffer(RAM) while the buffer is empty"
+                #  Actaul solution: host controller cards, "https://www.flir.eu/products/usb-3.1-host-controller-card?vertical=machine+vision&segment=iis"
+                try:
+                    cam_buffer_image = self.cam.GetNextImage(1000)
+                    if not cam_buffer_image.IsIncomplete():
+                        data = self.processor.Convert(cam_buffer_image, PySpin.PixelFormat_Mono8)
+                    cam_buffer_image.Release()
+                    self.data_publisher.send(data.GetData())
+                    del data
+                except Exception as _:
+                    pass
+
 
 
 def main():
