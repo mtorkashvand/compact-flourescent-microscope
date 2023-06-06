@@ -419,10 +419,22 @@ while True:
 # Finish up by removing from the screen
 window.close()
 
-# Elements to add:
-# - remove exposure slider
-# - z-axis speed -> L1,R1 on GamePad
-# - movement in X/Y/Z directions (fast/slow)
+
+# UI Design
+# - [/] `input` with autoselect + take effect when return presses
+# - menu-tree:
+#       \_ set_shape
+#       |_ teensy_port
+# - [x] leds: toggle + text + value/`input`
+# - [x] exposures: icon + text + `input`
+# - [x] z-interp: checkbox + text + 3-buttons
+# - [x] browse folder: add path to tooltip instead of text box
+# - [ ] 4 buttons x-y directions + `input` for speed
+# - [ ] 2 buttons for z direction + `input`
+# - [ ] start/stop recording same button -> change icon
+# - [ ] start/stop tracking same button -> change icon
+# - [ ] display radio buttons: overlay or single
+# - [ ] vertical offset controllers
 
 
 if __name__ == '__main__':
