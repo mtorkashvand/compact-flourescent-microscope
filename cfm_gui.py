@@ -30,7 +30,8 @@ from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (
     InputSlider, CombosJoined, InputWithIncrements, ReturnHandler,
-    LEDCompound, ExposureCompound, FramerateCompound, LEDIR
+    LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
+    ZInterpolationTracking
 )
 
 # Parameters
@@ -169,6 +170,7 @@ ui_exposure_behavior = ExposureCompound(
 ui_framerate = FramerateCompound(
     ui_exposure_behavior, ui_exposure_gfp,
 )
+ui_interpolation_tracking = ZInterpolationTracking()
 
 
 # Add Elements
@@ -179,6 +181,7 @@ elements = [
     ui_offset_behavior_x, ui_offset_behavior_y,
     ui_offset_gcamp_x, ui_offset_gcamp_y,
     ui_exposure_gfp, ui_exposure_behavior,
+    ui_interpolation_tracking,
 ]
 
 
@@ -230,11 +233,7 @@ layout = [
     ],
     [
         sg.Text("teensy_usb_port "), sg_input_port("teensy_usb_port", "COM4"),
-        sg.Checkbox(
-            text="interpolation_tracking",
-            key="interpolation_tracking",
-            default=False
-        ),
+        *ui_interpolation_tracking.elements,
     ],[
         sg.Text("data_directory: "), folder_browser_data, sg.Input(key="data_directory", default_text=r"C:\src\data", size=130),
     ],[

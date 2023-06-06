@@ -528,4 +528,94 @@ class InputSlider(AbstractElement):
     def add_values(self, values):
         values[self.key] = self.type_caster( self.input.get() )
         return
-    
+## Z-Interpolation Tracking
+class ZInterpolationTracking(AbstractElement):
+    # Cosntructor
+    def __init__(self) -> None:
+        super().__init__()
+        self.key = "ZINTERP"
+        self.color_disabled = "#555555"
+        self.color_set = "#00ff00"
+        self.color_unset = "#ff0000"
+        self.key_checkbox = f"{self.key}-CHECKBOX"
+        self.key_p1 = f"{self.key}-P1"
+        self.key_p2 = f"{self.key}-P2"
+        self.key_p3 = f"{self.key}-P3"
+
+        self.checkbox = sg.Checkbox(
+            text="Plane-Interpolation Z-Tracking",
+            key=self.key_checkbox,
+            enable_events=True,
+            default=False
+        )
+        self.p1 = sg.Button(
+            button_text="Set Point 1",
+            key=self.key_p1,
+            enable_events=True,
+            disabled=True,
+            button_color=self.color_disabled
+        )
+        self.p1_is_set = False
+        self.p2 = sg.Button(
+            button_text="Set Point 2",
+            key=self.key_p2,
+            enable_events=True,
+            disabled=True,
+            button_color=self.color_disabled
+        )
+        self.p2_is_set = False
+        self.p3 = sg.Button(
+            button_text="Set Point 3",
+            key=self.key_p3,
+            enable_events=True,
+            disabled=True,
+            button_color=self.color_disabled
+        )
+        self.p3_is_set = False
+
+        self.elements = [
+            self.checkbox, self.p1, self.p2, self.p3,
+        ]
+        self.events = {
+            self.key_checkbox, self.key_p1, self.key_p2, self.key_p3,
+        }
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key_checkbox:
+            p_disabled = not self.checkbox.get()
+            button_color = self.color_disabled if p_disabled else self.color_unset
+            self.p1.update(disabled=p_disabled, button_color=button_color)
+            self.p2.update(disabled=p_disabled, button_color=button_color)
+            self.p3.update(disabled=p_disabled, button_color=button_color)
+            self.p1_is_set, self.p2_is_set, self.p3_is_set = False, False, False
+        elif event == self.key_p1:
+            self.p1_is_set = True
+            self.p1.update(button_color=self.color_set)
+            client_cli_cmd = "DO set_point 1"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        elif event == self.key_p2:
+            self.p2_is_set = True
+            self.p2.update(button_color=self.color_set)
+            client_cli_cmd = "DO set_point 2"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        elif event == self.key_p3:
+            self.p3_is_set = True
+            self.p3.update(button_color=self.color_set)
+            client_cli_cmd = "DO set_point 3"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return {
+            'checkbox': self.checkbox.get(),
+            'p1': self.p1_is_set,
+            'p2': self.p2_is_set,
+            'p3': self.p3_is_set,
+        }
