@@ -15,7 +15,7 @@ Options:
     --port_forwarder_in=PORT           [default: L5000]
 """
 
-DEBUG = False
+DEBUG = True
 
 import time
 import signal
@@ -84,7 +84,6 @@ class GUIClient():
             print(resp_str)
             self.log(f"<CLIENT WITH GUI> response received: {resp_str}")
         if req_str == "DO shutdown":
-            self.running = False
             time.sleep(1)
             self.control_socket.send_string("TERMINATE")
 

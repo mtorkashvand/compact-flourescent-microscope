@@ -30,7 +30,7 @@ from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (
     InputSlider, CombosJoined, InputWithIncrements, InputAutoselect, ReturnHandler,
-    LEDCompound
+    LEDCompound, ExposureCompound
 )
 
 # Parameters
@@ -90,8 +90,6 @@ def sg_input_port(key, port):
 
 
 ui_framerate = InputSlider('framerate: ', key='framerate', default_value=20, range=(1, 48), type_caster=int)
-ui_exposure_behavior = InputSlider('exposure behavior: ', key='exposure_behavior', default_value=18000, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
-ui_exposure_gfp = InputSlider('exposure gfp: ', key='exposure_gcamp', default_value=48750, range=(1, 48750), type_caster=int)  # TODO: set range_max from frame_rate and lock it
 ui_binsize_format = CombosJoined(
     text1="Binsize: ", text2="Format: ",
     v1_to_v2s={
@@ -156,15 +154,33 @@ ui_led_opt = LEDCompound(
     button_text='led-O', text='LED Optogenetics', key='LED-OPT', led_name='o',
     bounds=(0,255)
 )
+ui_exposure_gfp = ExposureCompound(
+    button_text='exposure-gcamp', text='Exposure GFP',
+    key='EXPOSURE-GFP',
+    camera_name='gcamp',
+    bounds=(0, 478000)
+)
+ui_exposure_behavior = ExposureCompound(
+    button_text='exposure-behavior', text='Exposure Behavior',
+    key='EXPOSURE-BEHAVIOR',
+    camera_name='behavior',
+    bounds=(0, 478000)
+)
 # Add Elements
 elements = [
     ui_return_handler,
     ui_led_gfp,
     ui_led_opt,
-    ui_framerate, ui_exposure_behavior, ui_exposure_gfp, ui_binsize_format,
+    ui_framerate, ui_binsize_format,
     ui_offset_behavior_x, ui_offset_behavior_y,
     ui_offset_gcamp_x, ui_offset_gcamp_y,
+    ui_exposure_gfp, ui_exposure_behavior,
 ]
+
+
+
+
+
 
 
 folder_browser_data = sg.FolderBrowse(
@@ -206,7 +222,7 @@ layout = [
     ],
     # Camera Lighting
     [
-        *ui_framerate.elements, *ui_exposure_behavior.elements, *ui_exposure_gfp.elements
+        *ui_framerate.elements, *ui_exposure_gfp.elements, *ui_exposure_behavior.elements,
     ],
     # Camera Binning and Size
     [
@@ -331,6 +347,10 @@ while True:
         window['img_frame_g'].update(data=frame_g)
     else:
         event, values = window.read()
+    # Add Values
+    # To be used by handlers.
+    for element in elements:
+        element.add_values(values)
     # Handle Events
     for element in registered_events[event]:
         element.handle(event = event, **values)
@@ -426,18 +446,6 @@ while True:
         # TODO set LED Optogenetics power
         state_str = "n" if values['led_ir_checkbox'] else "f"
         client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
-        print(f"Executing: '{client_cli_cmd}'")
-        gui_client.process(client_cli_cmd)
-    elif event.startswith("led_slider_gcamp"):
-        # TODO set LED GCaMP power
-        led_name, intensity = "g", int(values['led_slider_gcamp'])
-        client_cli_cmd = f"DO _teensy_commands_set_led {led_name} {intensity}"
-        print(f"Executing: '{client_cli_cmd}'")
-        gui_client.process(client_cli_cmd)
-    elif event.startswith("led_slider_optogenetics"):
-        # TODO set LED Optogenetics power
-        led_name, intensity = "o", int(values['led_slider_optogenetics'])
-        client_cli_cmd = f"DO _teensy_commands_set_led {led_name} {intensity}"
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
     

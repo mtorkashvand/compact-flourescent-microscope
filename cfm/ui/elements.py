@@ -91,6 +91,7 @@ class InputAutoselect(AbstractElement):
         self.input = sg.Input(
             default_text=self.default_text,
             key=self.key,
+            justification='righ',
             size=size
         )
         self.events = { self.key }
@@ -114,6 +115,13 @@ class InputAutoselect(AbstractElement):
         return self.type_caster(
             self.input.get()
         )
+    # Bounds
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        if bound_lower:
+            self.bound_lower = bound_lower
+        if bound_upper:
+            self.bound_upper = bound_upper
+        return
 ## LED Combined Elements
 class LEDCompound(AbstractElement):
     # Cosntructor
@@ -162,7 +170,6 @@ class LEDCompound(AbstractElement):
             self.button.update(button_color=button_color)
         elif event == self.key_input:
             self.input_as.handle(**kwargs)
-        # TODO: add sending led commands
         if self.toggle:
             intensity = self.input_as.get()
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} {intensity}"
@@ -171,6 +178,70 @@ class LEDCompound(AbstractElement):
         return
     def add_values(self, values):
         values[self.key] = self.input_as.get()
+        return
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        self.input_as.set_bounds(
+            bound_lower=bound_lower,
+            bound_upper=bound_upper
+        )
+        return
+## Exposure Combined Elements
+class ExposureCompound(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self, button_text: str, text:str, key: str,
+            camera_name: str,
+            type_caster = int,
+            bounds=(None, None)
+        ) -> None:
+        super().__init__()
+        self.button_text = button_text
+        self.key = key
+        self.camera_name = camera_name
+        self.bounds = bounds
+        self.button = sg.Button(
+            button_text=self.button_text,
+            disabled=True,
+            enable_events=False
+        )
+        self.text = sg.Text(
+            text=text
+        )
+        self.input_as = InputAutoselect(
+            key=self.key, default_text='18000', size=8, type_caster=type_caster,
+            bounds=self.bounds
+        )
+        self.elements = [
+            self.button, self.text, *self.input_as.elements
+        ]
+        self.events = {
+            self.key
+        }
+        return
+    # Handle
+    def handle(self, **kwargs):
+        # DEBUG
+        print("\n"*3)
+        print(kwargs)
+        print("\n"*3)
+
+        framerate = kwargs['framerate']
+        self.input_as.handle(**kwargs)
+        exposure_time = self.input_as.get()
+        client_cli_cmd = "DO _flir_camera_set_exposure_framerate_{} {} {}".format(
+            self.camera_name, exposure_time, framerate
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.input_as.get()
+        return
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        self.input_as.set_bounds(
+            bound_lower=bound_lower,
+            bound_upper=bound_upper
+        )
         return
 ## 
 class InputWithIncrements(AbstractElement):

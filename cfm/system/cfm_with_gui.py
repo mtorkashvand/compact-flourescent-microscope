@@ -12,7 +12,7 @@ Different Camera Configuration Serial Numbers:
 - 22591142, 22591117
 """
 
-DEBUG = False
+DEBUG = True
 
 import os
 
