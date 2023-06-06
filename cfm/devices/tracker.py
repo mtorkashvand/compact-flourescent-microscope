@@ -266,8 +266,8 @@ class TrackerDevice():
         self.isN = False
         # print("interpolation tracking is {}".format(interpolation_tracking))
         ## Tracker Class
-        self.xytracker = XYTrackerThreshold(tracker = self)
-        # self.xytracker = XYTrackerRatio(tracker = self)
+        # self.xytracker = XYTrackerThreshold(tracker = self)
+        self.xytracker = XYTrackerRatio(tracker = self)
 
 
         np.seterr(divide = 'ignore')
@@ -565,9 +565,10 @@ class TrackerDevice():
             # self.set_velocities(self.vx, -self.vy, self.vz)  # DEBUG check if this is the sign
             # DEBUG
             if self.vz is not None:
-                print(self.vz)
-            self.set_velocities(self.vx, -self.vy, self.vz)
-            # self.set_velocities(self.vx, -self.vy, None)
+                # print(self.vz)
+                pass
+            # self.set_velocities(self.vx, -self.vy, self.vz)
+            self.set_velocities(self.vx, -self.vy, None)
 
         # Return
         return
