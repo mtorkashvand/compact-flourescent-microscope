@@ -235,9 +235,10 @@ layout = [
         sg.Text("teensy_usb_port "), sg_input_port("teensy_usb_port", "COM4"),
         *ui_interpolation_tracking.elements,
     ],[
-        sg.Text("data_directory: "), folder_browser_data, sg.Input(key="data_directory", default_text=r"C:\src\data", size=130),
-    ],[
-        sg.Text("logger_directory: "), folder_browser_logger, sg.Input(key="logger_directory", default_text=r"C:\src\data", size=130),
+        sg.Text("data_directory: "),
+        folder_browser_data, sg.Input(key="data_directory", default_text=r"./", size=30),
+        sg.Text("logger_directory: "),
+        folder_browser_logger, sg.Input(key="logger_directory", default_text=r"./", size=30),
     ],
     [
         sg.HorizontalSeparator(),
@@ -392,18 +393,6 @@ while True:
         )
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
-    elif event.startswith("exposure_behavior"):
-        client_cli_cmd = "DO _flir_camera_set_exposure_framerate_behavior {} {}".format(
-            values["exposure_behavior"], values["framerate"] 
-        )
-        print(f"Executing: '{client_cli_cmd}'")
-        gui_client.process(client_cli_cmd)
-    elif event.startswith("exposure_gcamp"):
-        client_cli_cmd = "DO _flir_camera_set_exposure_framerate_gcamp {} {}".format(
-            values["exposure_gcamp"], values["framerate"] 
-        )
-        print(f"Executing: '{client_cli_cmd}'")
-        gui_client.process(client_cli_cmd)
     elif event == 'Start Recording':
         for element in elements:
             element.disable()
@@ -418,12 +407,6 @@ while True:
         window['Start Recording'].update(disabled=False)
         window['Stop Recording'].update(disabled=True)
         client_cli_cmd = f"DO _writer_stop"
-        print(f"Executing: '{client_cli_cmd}'")
-        gui_client.process(client_cli_cmd)
-    elif event == 'led_ir_checkbox':
-        # TODO set LED Optogenetics power
-        state_str = "n" if values['led_ir_checkbox'] else "f"
-        client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
     
