@@ -8,7 +8,7 @@ Options:
     --inbound=HOST:PORT         Socket address to receive commands.
                                     [default: localhost:5001]
     --outbound=HOST:PORT        Socket address to publish status.
-                                    [default: localhost:5000]
+                                    [default: L5000]
     --port=<PORT>               USB port.
                                     [default: COM4]
 """
@@ -119,14 +119,19 @@ class TeensyCommandsDevice():
     @property
     def x(self):
         return self.coords[0]
+    @property
     def y(self):
         return self.coords[1]
+    @property
     def z(self):
         return self.coords[2]
+    @property
     def vx(self):
         return self.coords[3]
+    @property
     def vy(self):
         return self.coords[4]
+    @property
     def vz(self):
         return self.coords[5]
 
@@ -196,7 +201,7 @@ class TeensyCommandsDevice():
     def _execute(self, cmd: str, **kwargs):
         cmd_format_string = self._COMMANDS[cmd]
         formatted_string = cmd_format_string.format(**kwargs)
-        self.log(f"<TEENSY COMMANDS> executing: {formatted_string}")
+        self.log(f"<TEENSY COMMANDS> executing: {formatted_string[:-1]}")  # Log except the trailing `\n`
         reply = b''
         self.serial_obj.write(bytes(formatted_string, "ascii"))
         while not reply:

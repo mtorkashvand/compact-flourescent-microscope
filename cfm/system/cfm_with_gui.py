@@ -151,9 +151,9 @@ class CFMwithGUI:
         # Behavior
         self.jobs.append(Popen(["flir_camera",
                         f"--serial_number={camera_serial_number_behavior}",
-                        f"--commands=localhost:{forwarder_out}",
+                        f"--commands=L{forwarder_out}",
                         f"--name=FlirCameraBehavior",
-                        f"--status=localhost:{forwarder_in}",
+                        f"--status=L{forwarder_in}",
                         f"--data=*:{data_camera_out_behavior}",
                         f"--width={shape[1]}",
                         f"--height={shape[0]}",
@@ -163,9 +163,9 @@ class CFMwithGUI:
         ## GCaMP
         self.jobs.append(Popen(["flir_camera",
                         f"--serial_number={camera_serial_number_gcamp}",
-                        f"--commands=localhost:{forwarder_out}",
+                        f"--commands=L{forwarder_out}",
                         f"--name=FlirCameraGCaMP",
-                        f"--status=localhost:{forwarder_in}",
+                        f"--status=L{forwarder_in}",
                         f"--data=*:{data_camera_out_gcamp}",
                         f"--width={shape[1]}",
                         f"--height={shape[0]}",

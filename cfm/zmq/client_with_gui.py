@@ -12,7 +12,7 @@ Usage:
 Options:
     -h --help             Show this help.
     --port=PORT           [default: 5002]
-    --port_forwarder_in=PORT           [default: localhost:5000]
+    --port_forwarder_in=PORT           [default: L5000]
 """
 
 DEBUG = False

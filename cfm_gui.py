@@ -271,7 +271,7 @@ window = sg.Window(
     layout
 )
 window.finalize()
-gui_client = GUIClient(port=server_client, port_forwarder_in=forwarder_in)
+gui_client = GUIClient(port=server_client, port_forwarder_in=f"L{forwarder_in}")
 
 # Create the dual displayer instance
 dual_displayer = DualDisplayer(
@@ -411,7 +411,7 @@ while True:
         gui_client.process(client_cli_cmd)
     elif event.startswith("led_slider_gcamp"):
         # TODO set LED GCaMP power
-        led_name, intensity = "g", int(values['led_slider_optogenetics'])
+        led_name, intensity = "g", int(values['led_slider_gcamp'])
         client_cli_cmd = f"DO _teensy_commands_set_led {led_name} {intensity}"
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
