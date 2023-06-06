@@ -29,12 +29,12 @@ from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (
-    InputSlider, CombosJoined, InputWithIncrements, InputAutoselect, ReturnHandler,
-    LEDCompound, ExposureCompound
+    InputSlider, CombosJoined, InputWithIncrements, ReturnHandler,
+    LEDCompound, ExposureCompound, FramerateCompound
 )
 
 # Parameters
-DEBUG = False
+DEBUG = True
 
 forwarder_in = str(5000)
 forwarder_out = str(5001)
@@ -89,7 +89,6 @@ def sg_input_port(key, port):
 # TODO: 
 
 
-ui_framerate = InputSlider('framerate: ', key='framerate', default_value=20, range=(1, 48), type_caster=int)
 ui_binsize_format = CombosJoined(
     text1="Binsize: ", text2="Format: ",
     v1_to_v2s={
@@ -147,25 +146,30 @@ ui_offset_gcamp_y = InputWithIncrements(
 
 ui_return_handler = ReturnHandler()
 ui_led_gfp = LEDCompound(
-    button_text='led-G', text='LED GFP', key='LED-GFP', led_name='g',
+    button_text='led-G', text='LED GFP', key='led_gfp', led_name='g',
     bounds=(0,255)
 )
 ui_led_opt = LEDCompound(
-    button_text='led-O', text='LED Optogenetics', key='LED-OPT', led_name='o',
+    button_text='led-O', text='LED Optogenetics', key='led_opt', led_name='o',
     bounds=(0,255)
 )
 ui_exposure_gfp = ExposureCompound(
     button_text='exposure-gcamp', text='Exposure GFP',
-    key='EXPOSURE-GFP',
+    key='exposure_gcamp',
     camera_name='gcamp',
-    bounds=(0, 478000)
+    bounds=(250, 478000)
 )
 ui_exposure_behavior = ExposureCompound(
     button_text='exposure-behavior', text='Exposure Behavior',
-    key='EXPOSURE-BEHAVIOR',
+    key='exposure_behavior',
     camera_name='behavior',
-    bounds=(0, 478000)
+    bounds=(250, 478000)
 )
+ui_framerate = FramerateCompound(
+    ui_exposure_behavior, ui_exposure_gfp,
+)
+
+
 # Add Elements
 elements = [
     ui_return_handler,

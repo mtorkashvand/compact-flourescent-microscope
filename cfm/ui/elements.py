@@ -112,15 +112,21 @@ class InputAutoselect(AbstractElement):
         return
     # Value
     def get(self):
-        return self.type_caster(
-            self.input.get()
-        )
+        raw = self.input.get()
+        if not isinstance(raw, str):
+            return self.type_caster(raw)
+        # remove character values
+        res = "0" + "".join([
+            c for c in raw if c.isdigit()
+        ])
+        return self.type_caster( res )
     # Bounds
     def set_bounds(self, bound_lower=None, bound_upper=None):
         if bound_lower:
             self.bound_lower = bound_lower
         if bound_upper:
             self.bound_upper = bound_upper
+        self.handle()
         return
 ## LED Combined Elements
 class LEDCompound(AbstractElement):
@@ -185,6 +191,10 @@ class LEDCompound(AbstractElement):
             bound_upper=bound_upper
         )
         return
+    def get(self):
+        if not self.toggle:
+            return 0
+        return self.input_as.get()
 ## Exposure Combined Elements
 class ExposureCompound(AbstractElement):
     # Cosntructor
@@ -220,11 +230,6 @@ class ExposureCompound(AbstractElement):
         return
     # Handle
     def handle(self, **kwargs):
-        # DEBUG
-        print("\n"*3)
-        print(kwargs)
-        print("\n"*3)
-
         framerate = kwargs['framerate']
         self.input_as.handle(**kwargs)
         exposure_time = self.input_as.get()
@@ -243,6 +248,67 @@ class ExposureCompound(AbstractElement):
             bound_upper=bound_upper
         )
         return
+    def get(self):
+        return self.input_as.get()
+## Framerate Compound
+class FramerateCompound(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self,
+            element_exposure_behavior: ExposureCompound,
+            element_exposure_gfp: ExposureCompound,
+            key: str = 'framerate',
+            text: str = "Frame Rate between: 1-48",
+            bounds=(1, 48),
+            type_caster = int
+        ) -> None:
+        super().__init__()
+        self.element_exposure_behavior = element_exposure_behavior
+        self.element_exposure_gfp = element_exposure_gfp
+        self.key = key
+        self.bounds = bounds
+        self.button = sg.Button(
+            button_text='framerate-icon',
+            disabled=True,
+            enable_events=False
+        )
+        self.text = sg.Text(
+            text=text
+        )
+        self.input_as = InputAutoselect(
+            key=self.key, default_text='20', size=3, type_caster=type_caster,
+            bounds=self.bounds
+        )
+        self.elements = [
+            self.button, self.text, *self.input_as.elements
+        ]
+        self.events = {
+            self.key
+        }
+        return
+    # Handle
+    def handle(self, **kwargs):
+        self.input_as.handle(**kwargs)
+        framerate = self.get()
+        # Update Bounds
+        bound_upper = int( 995000/framerate )
+        self.element_exposure_behavior.set_bounds(bound_upper=bound_upper)
+        self.element_exposure_gfp.set_bounds(bound_upper=bound_upper)
+        # Handle
+        self.element_exposure_behavior.handle(framerate = framerate)
+        self.element_exposure_gfp.handle(framerate = framerate)
+        return
+    def add_values(self, values):
+        values[self.key] = self.input_as.get()
+        return
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        self.input_as.set_bounds(
+            bound_lower=bound_lower,
+            bound_upper=bound_upper
+        )
+        return
+    def get(self):
+        return self.input_as.get()
 ## 
 class InputWithIncrements(AbstractElement):
     # Constructor
