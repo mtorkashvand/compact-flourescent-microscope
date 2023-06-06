@@ -64,8 +64,6 @@ class  XInputToZMQPub():
         self.packet_number = 0
     
     def shutdown(self):
-        # DEBUG
-        print(f"\n\n{self.name} SHUTDOWN CALLLLEEDDDDD!!!!\n\n")
         self.running = False
         msg = struct.pack(b'HBBhhhh', 0, 0, 0, 0, 0, 0, 0)
         self.publisher.socket.send(msg, flags=0)
@@ -93,15 +91,7 @@ class  XInputToZMQPub():
                                   result.bLeftTrigger, result.bRightTrigger,
                                   result.sThumbLX, result.sThumbLY, result.sThumbRX, result.sThumbRY)
                 self.publisher.socket.send(msg, flags=0)
-                # DEBUG
-                print("#"*57)
-                print(
-                    result.wButtons,
-                    result.bLeftTrigger, result.bRightTrigger,
-                    result.sThumbLX, result.sThumbLY, result.sThumbRX, result.sThumbRY)
             time.sleep(0.01)
-        # DEBUG
-        print("\n\nWE'RE FREEEEEEEEEEEEEEE!!!\n\n")
 
 def main():
     """CLI entry point."""

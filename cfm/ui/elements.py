@@ -3,6 +3,8 @@ from typing import Dict, List
 from collections import defaultdict
 import PySimpleGUI as sg
 
+from cfm.zmq.client_with_gui import GUIClient
+
 # Parameters
 
 # Methods
@@ -21,6 +23,7 @@ class AbstractElement:
     def __init__(self) -> None:
         self.events = set()
         self.elements = list()
+        self.client = None
         return
     # Handle
     def handle(self, **kwargs):
@@ -43,10 +46,137 @@ class AbstractElement:
     # Values
     def add_values(self, values):
         raise NotImplementedError()
+    # Get Value
+    def get(self):
+        raise NotImplementedError()
+    # Set Client
+    def set_client(self, client: GUIClient):
+        self.client = client
+        return
+## Return Key Handler
+class ReturnHandler(AbstractElement):
+    # Constructor
+    def __init__(self) -> None:
+        super().__init__()
+        self.key = "RETURN-KEY"
+        self.elements = [
+            sg.Button(visible=False, key=self.key, bind_return_key=True)
+        ]
+        self.events = { self.key }
+        return
+    def set_window(self, window):
+        self.window = window
+        return
+    def handle(self, **kwargs):
+        element_focused = self.window.find_element_with_focus()
+        self.window.write_event_value(
+            element_focused.key,
+            '<RETURN-KEY-CALL>'
+        )
+        return
+    def add_values(self, values):
+        return
+    def disable(self):
+        return
+    def enable(self):
+        return
+## Input Element with Autoselect and Enter Event handling
+class InputAutoselect(AbstractElement):
+    def __init__(self, key: str, default_text: int, size, type_caster=int, bounds=(None, None)) -> None:
+        super().__init__()
+        self.key = key
+        self.default_text = default_text
+        self.type_caster = type_caster
+        self.bound_lower, self.bound_upper = bounds
+        self.input = sg.Input(
+            default_text=self.default_text,
+            key=self.key,
+            size=size
+        )
+        self.events = { self.key }
+        self.elements = [ self.input ]
+        return
+    # Handle
+    def handle(self, **kwargs):
+        value = self.get()
+        if self.bound_lower is not None:
+            value = max( self.bound_lower, value )
+        if self.bound_upper is not None:
+            value = min( self.bound_upper, value )
+        self.input.update(value=value)
+        return
+    # Values
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    # Value
+    def get(self):
+        return self.type_caster(
+            self.input.get()
+        )
+## LED Combined Elements
+class LEDCompound(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self, button_text: str, text:str, key: str,
+            led_name: str,
+            color_off: str = '#ff0000', color_on: str = "#00ff00",
+            type_caster = int,
+            bounds=(None, None)
+        ) -> None:
+        super().__init__()
+        self.color_on = color_on
+        self.color_off = color_off
+        self.button_text = button_text
+        self.led_name = led_name
+        self.bounds = bounds
+        self.key = key
+        self.key_toggle = f"{self.key}-TOGGLE"
+        self.key_input= f"{self.key}-INPUT"
+        self.button = sg.Button(
+            button_text=self.button_text,
+            key=self.key_toggle,
+            button_color=color_off
+        )
+        self.text = sg.Text(
+            text=text
+        )
+        self.input_as = InputAutoselect(
+            key=self.key_input, default_text='0', size=3, type_caster=type_caster,
+            bounds=self.bounds
+        )
+        self.elements = [
+            self.button, self.text, *self.input_as.elements
+        ]
+        self.events = {
+            self.key_toggle, self.key_input
+        }
+        self.toggle = False
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key_toggle:
+            self.toggle = not self.toggle
+            button_color = self.color_on if self.toggle else self.color_off
+            self.button.update(button_color=button_color)
+        elif event == self.key_input:
+            self.input_as.handle(**kwargs)
+        # TODO: add sending led commands
+        if self.toggle:
+            intensity = self.input_as.get()
+            client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} {intensity}"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.input_as.get()
+        return
 ## 
 class InputWithIncrements(AbstractElement):
     # Constructor
     def __init__(self, text:str, key: str, default_value: int, increments: List[int] = [-1, 1], bounds: List[int] = [-1024, 1024], type_caster=int) -> None:
+        super().__init__()
         self.text = text
         self.default_value = default_value
         self.bounds = bounds
@@ -105,6 +235,7 @@ class CombosJoined(AbstractElement):
     # e.g. binsize and format (shape of image crop)
     # Constructor
     def __init__(self, text1: str, text2: str, v1_to_v2s: Dict[str, str], default_v1: str, default_v2: str, key1: str, key2: str) -> None:
+        super().__init__()
         # Parameters
         self.v1_to_v2s = {
             k: sorted(v) for k,v in v1_to_v2s.items()
@@ -160,6 +291,7 @@ class InputSlider(AbstractElement):
     """Input and slider connected to each other."""
     # Constructor
     def __init__(self, text, key, default_value=0.0, range=(0, 100), resolution=1, size_input=6, type_caster=float) -> None:
+        super().__init__()
         # Parameters
         self.text = text
         self.key = key

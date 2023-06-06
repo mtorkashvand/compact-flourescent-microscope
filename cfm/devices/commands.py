@@ -121,13 +121,9 @@ class XboxStageCommands():
             self.publish("teensy_commands change_vel_z 1")
 
         elif message == "dpad_right pressed":
-            # DEBUG
-            print(f"<{self.name}>@dpad_right")
             self.publish("tracker_behavior change_threshold 5")
 
         elif message == "dpad_left pressed":
-            # DEBUG
-            print(f"<{self.name}>@dpad_left")
             self.publish("tracker_behavior change_threshold -5")
 
         elif tokens[0] == "left_stick":

@@ -257,9 +257,6 @@ class  FlirCamera():
             node_offset_width.SetValue(x_offset_old)
             print(f"Invalid x_offsets catched! :wink:\n{str(e)}")
 
-        # DEBUG
-        # print(y_offset, x_offset)
-
         self.first_time_in_loop = 1
         self.publish_status()
         return depth, node_height.GetValue(), node_width.GetValue(), node_binning_vertical.GetValue()

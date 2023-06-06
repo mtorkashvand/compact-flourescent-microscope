@@ -28,7 +28,10 @@ import PySimpleGUI as sg
 from cfm.zmq.client_with_gui import GUIClient
 from cfm.system.cfm_with_gui import CFMwithGUI
 from cfm.devices.dual_displayer import DualDisplayer
-from cfm.ui.elements import InputSlider, CombosJoined, InputWithIncrements
+from cfm.ui.elements import (
+    InputSlider, CombosJoined, InputWithIncrements, InputAutoselect, ReturnHandler,
+    LEDCompound
+)
 
 # Parameters
 DEBUG = False
@@ -143,8 +146,21 @@ ui_offset_gcamp_y = InputWithIncrements(
     increments=[-10,-2,2,10],
     type_caster=int
 )
+
+ui_return_handler = ReturnHandler()
+ui_led_gfp = LEDCompound(
+    button_text='led-G', text='LED GFP', key='LED-GFP', led_name='g',
+    bounds=(0,255)
+)
+ui_led_opt = LEDCompound(
+    button_text='led-O', text='LED Optogenetics', key='LED-OPT', led_name='o',
+    bounds=(0,255)
+)
 # Add Elements
 elements = [
+    ui_return_handler,
+    ui_led_gfp,
+    ui_led_opt,
     ui_framerate, ui_exposure_behavior, ui_exposure_gfp, ui_binsize_format,
     ui_offset_behavior_x, ui_offset_behavior_y,
     ui_offset_gcamp_x, ui_offset_gcamp_y,
@@ -169,6 +185,13 @@ progress_bar = sg.ProgressBar(
     key='progressbar'
 )
 layout = [
+    [
+        *ui_return_handler.elements,
+    ],
+    [
+        *ui_led_gfp.elements,
+        *ui_led_opt.elements,
+    ],
     # Start & Stop
     [
         [
@@ -268,10 +291,14 @@ for element in elements:
 # Create the window
 window = sg.Window(
     'Compact Fluerscence Microscope (CFM) GUI',
-    layout
+    layout,
+    finalize=True
 )
-window.finalize()
+ui_return_handler.set_window(window)
 gui_client = GUIClient(port=server_client, port_forwarder_in=f"L{forwarder_in}")
+# Add Client to Elements so they can interact directly with it
+for element in elements:
+    element.set_client(gui_client)
 
 # Create the dual displayer instance
 dual_displayer = DualDisplayer(
@@ -304,10 +331,6 @@ while True:
         window['img_frame_g'].update(data=frame_g)
     else:
         event, values = window.read()
-    if DEBUG:
-        print(values)
-        print(event)
-        _start = time.time()
     # Handle Events
     for element in registered_events[event]:
         element.handle(event = event, **values)
@@ -316,10 +339,8 @@ while True:
     for element in elements:
         element.add_values(values)
     if DEBUG:
-        _end = time.time()
-        _n += 1
-        _duration += (_end - _start)
-        print(f"DEBUG: Cycles: {_n}, Average Process Time: {_duration/_n}")
+        print(values)
+        print(event)
     # See if user wants to quit or window was closed
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         zero_displayers()
@@ -358,7 +379,6 @@ while True:
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
     elif event.startswith("offset_behavior"):
-        print("DEBUG I'M BHEAVIOR!!!")
         offset_bx = 224 + values['offset_behavior_x']
         offset_by = 44 + values['offset_behavior_y']
         client_cli_cmd = "DO _flir_camera_set_region_behavior 1 512 512 2 {} {}".format(
@@ -367,7 +387,6 @@ while True:
         print(f"Executing: '{client_cli_cmd}'")
         gui_client.process(client_cli_cmd)
     elif event.startswith("offset_gcamp"):
-        print("DEBUG I'M GCAMP!!!")
         offset_gx = 224 + values['offset_gcamp_x']
         offset_gy = 44 + values['offset_gcamp_y']
         client_cli_cmd = "DO _flir_camera_set_region_gcamp 1 512 512 2 {} {}".format(
