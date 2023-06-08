@@ -594,20 +594,24 @@ class TrackerDevice():
         print(f"<{self.name}>@Threshold: {self.MASK_WORM_THRESHOLD}")
         self.send_log(f"threshold changed {_tmp}->{self.MASK_WORM_THRESHOLD}")
 
-    
-    def toggle_tracking(self):
-        if self.tracking:
-            print(f"<{self.name}>@tracking stopped")
-            self.set_velocities(0, 0, 0)
-            self.send_log("stopping tracking")
-        else:
-            print(f"<{self.name}>@tracking started")
+
+    def start(self):
+        if not self.tracking:
             self.shrp_idx = 0
             self.send_log("starting tracking")
         self.missing_worm_idx = 0
         self.trackedworm_center = None
         self.trackedworm_size = None
-        self.tracking = not self.tracking
+        self.tracking = True
+
+    def stop(self):
+        if self.tracking:
+            self.set_velocities(0, 0, 0)
+            self.send_log("stopping tracking")
+        self.missing_worm_idx = 0
+        self.trackedworm_center = None
+        self.trackedworm_size = None
+        self.tracking = False
 
 
     def set_shape(self, y ,x):
@@ -624,22 +628,6 @@ class TrackerDevice():
 
         self.poller.register(self.data_subscriber.socket, zmq.POLLIN)
         self.publish_status()
-
-    # TODO: is this command used? what is its purpose? I don't understand the docstring
-    def stop(self):
-        """Stops the subscription to data port."""
-        if self.tracking:
-            self.tracking = False
-            self.command_publisher.send("zaber stop_xy") 
-            self.publish_status()
-
-    def start(self):
-        """Start subscribing to image data."""
-        if not self.tracking:
-            self.pid.Ix = 0
-            self.pid.Iy = 0
-            self.tracking = True
-            self.publish_status()
 
     def shutdown(self):
         """Shutdown the tracking device."""
