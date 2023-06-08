@@ -45,12 +45,6 @@ class WormTrackerHub(Hub):
         Hub.__init__(self, inbound, outbound, server, name)
         self.framerate=framerate
 
-    def toggle_recording(self, state):
-        if state in ["true", "True", "1", 1, True]:
-            self._writer_start()
-        else:
-            self._writer_stop()
-
     def shutdown(self):
         self._displayer_shutdown()
         self._writer_shutdown()
@@ -125,6 +119,12 @@ class WormTrackerHub(Hub):
         # TODO: separate functions for cameras?
         self.send("writer_behavior stop")
         self.send("writer_gcamp stop")
+
+    def _tracker_start(self):
+        self.send("tracker start")
+
+    def _tracker_stop(self):
+        self.send("tracker stop")
 
     def _writer_toggle(self):
         self.send("writer_behavior toggle")
@@ -229,7 +229,6 @@ def main():
         name=arguments["--name"])
 
     scope.run()
-    print("AFTER DEATH! HUB RELAY")
 
 if __name__ == "__main__":
     main()
