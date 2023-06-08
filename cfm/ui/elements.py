@@ -1,5 +1,5 @@
 # Modules
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from collections import defaultdict
 import PySimpleGUI as sg
 
@@ -132,25 +132,28 @@ class InputAutoselect(AbstractElement):
 class LEDCompound(AbstractElement):
     # Cosntructor
     def __init__(
-            self, button_text: str, text:str, key: str,
+            self, text: str, key: str,
             led_name: str,
-            color_off: str = '#ff0000', color_on: str = "#00ff00",
+            icon_off, icon_on,
+            icon_size: Tuple[int, int],
             type_caster = int,
             bounds=(None, None)
         ) -> None:
         super().__init__()
-        self.color_on = color_on
-        self.color_off = color_off
-        self.button_text = button_text
+        self.icon_on = icon_on
+        self.type_caster = type_caster
+        self.icon_off = icon_off
+        self.icon_size = icon_size
         self.led_name = led_name
         self.bounds = bounds
         self.key = key
         self.key_toggle = f"{self.key}-TOGGLE"
         self.key_input= f"{self.key}-INPUT"
         self.button = sg.Button(
-            button_text=self.button_text,
+            image_data=self.icon_off,
+            image_size=self.icon_size,
             key=self.key_toggle,
-            button_color=color_off
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text = sg.Text(
             text=text
@@ -172,15 +175,20 @@ class LEDCompound(AbstractElement):
         event = kwargs['event']
         if event == self.key_toggle:
             self.toggle = not self.toggle
-            button_color = self.color_on if self.toggle else self.color_off
-            self.button.update(button_color=button_color)
+            image_data = self.icon_on if self.toggle else self.icon_off
+            self.button.update(image_data=image_data)
         elif event == self.key_input:
             self.input_as.handle(**kwargs)
         if self.toggle:
-            intensity = self.input_as.get()
+            intensity = self.type_caster(self.input_as.get() * 2.55)
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} {intensity}"
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
+        else:
+            client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} 0"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+
         return
     def add_values(self, values):
         values[self.key] = self.input_as.get()
@@ -200,29 +208,26 @@ class LEDIR(AbstractElement):
     # Cosntructor
     def __init__(
             self,
-            button_text: str = 'IR LED - Icon',
-            text:str = 'Toggle IR LED',
-            key: str = 'led_ir',
-            color_off: str = '#ff0000', color_on: str = "#00ff00",
-            type_caster = int,
-            bounds=(None, None)
+            text: str, key: str,
+            icon_off, icon_on,
+            icon_size: Tuple[int, int]
         ) -> None:
         super().__init__()
-        self.color_on = color_on
-        self.color_off = color_off
-        self.button_text = button_text
-        self.bounds = bounds
+        self.icon_on = icon_on
+        self.icon_off = icon_off
+        self.icon_size = icon_size
         self.key = key
         self.key_toggle = f"{self.key}-TOGGLE"
         self.button = sg.Button(
-            button_text=self.button_text,
+            image_data=self.icon_off,
+            image_size=self.icon_size,
             key=self.key_toggle,
-            button_color=color_off
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text = sg.Text(
             text=text
         )
-        self.input = sg.Input(default_text='255', size=3, disabled=True, key='')
+        self.input = sg.Input(default_text='100', size=3, disabled=True, key='')
         self.elements = [
             self.button, self.text, self.input
         ]
@@ -236,8 +241,8 @@ class LEDIR(AbstractElement):
         event = kwargs['event']
         if event == self.key_toggle:
             self.toggle = not self.toggle
-            button_color = self.color_on if self.toggle else self.color_off
-            self.button.update(button_color=button_color)
+            image_data = self.icon_on if self.toggle else self.icon_off
+            self.button.update(image_data=image_data)
         state_str = "n" if self.toggle else "f"
         client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
         print(f"Executing: '{client_cli_cmd}'")
@@ -248,34 +253,156 @@ class LEDIR(AbstractElement):
         return
     def get(self):
         return self.toggle
+
+
+class ToggleRecording(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self,
+            key: str,
+            icon_off, icon_on,
+            icon_size: Tuple[int, int]
+        ) -> None:
+        super().__init__()
+        self.icon_on = icon_on
+        self.icon_off = icon_off
+        self.text_on = "Recording"
+        self.text_off = "Not Recording"
+        self.icon_size = icon_size
+        self.key = key
+        self.key_toggle = f"{self.key}-TOGGLE"
+        self.button = sg.Button(
+            image_data=self.icon_off,
+            image_size=self.icon_size,
+            key=self.key_toggle,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.text = sg.Text(
+            text=self.text_off
+        )
+        self.elements = [
+            self.button, self.text
+        ]
+        self.events = {
+            self.key_toggle
+        }
+        self.toggle = False
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key_toggle:
+            self.toggle = not self.toggle
+            if self.toggle:
+                client_cli_cmd = f"DO _writer_start"
+                self.button.update(image_data=self.icon_on)
+                self.text.update(value=self.text_on)
+            else:
+                client_cli_cmd = f"DO _writer_stop"
+                self.button.update(image_data=self.icon_off)
+                self.text.update(value=self.text_off)
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return self.toggle
+    
+
+
+class ToggleTracking(AbstractElement):
+    # Cosntructor
+    def __init__(
+            self,
+            key: str,
+            icon_off, icon_on,
+            icon_size: Tuple[int, int]
+        ) -> None:
+        super().__init__()
+        self.icon_on = icon_on
+        self.icon_off = icon_off
+        self.text_on = "Tracking"
+        self.text_off = "Not Tracking"
+        self.icon_size = icon_size
+        self.key = key
+        self.key_toggle = f"{self.key}-TOGGLE"
+        self.button = sg.Button(
+            image_data=self.icon_off,
+            image_size=self.icon_size,
+            key=self.key_toggle,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.text = sg.Text(
+            text=self.text_off
+        )
+        self.elements = [
+            self.button, self.text
+        ]
+        self.events = {
+            self.key_toggle
+        }
+        self.toggle = False
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key_toggle:
+            self.toggle = not self.toggle
+            if self.toggle:
+                client_cli_cmd = f"DO _tracker_start"
+                self.button.update(image_data=self.icon_on)
+                self.text.update(value=self.text_on)
+            else:
+                client_cli_cmd = f"DO _tracker_stop"
+                self.button.update(image_data=self.icon_off)
+                self.text.update(value=self.text_off)
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return self.toggle
+
 ## Exposure Combined Elements
 class ExposureCompound(AbstractElement):
     # Cosntructor
     def __init__(
-            self, button_text: str, text:str, key: str,
+            self, text:str, key: str,
+            icon, icon_size: Tuple[int, int],
             camera_name: str,
             type_caster = int,
             bounds=(None, None)
         ) -> None:
         super().__init__()
-        self.button_text = button_text
         self.key = key
+        self.icon = icon
+        self.icon_size = icon_size
         self.camera_name = camera_name
         self.bounds = bounds
+        self.text = text
         self.button = sg.Button(
-            button_text=self.button_text,
+            image_data=self.icon,
+            image_size=self.icon_size,
             disabled=True,
-            enable_events=False
+            enable_events=False,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
-        self.text = sg.Text(
-            text=text
+        self.text_element = sg.Text(
+            text=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})'
         )
         self.input_as = InputAutoselect(
-            key=self.key, default_text='18000', size=8, type_caster=type_caster,
+            key=self.key, default_text='18000', size=6, type_caster=type_caster,
             bounds=self.bounds
         )
+        self.unit = sg.Text(
+            text='\U000003bcs'
+        )
         self.elements = [
-            self.button, self.text, *self.input_as.elements
+            self.button, self.text_element, *self.input_as.elements, self.unit
         ]
         self.events = {
             self.key
@@ -296,13 +423,21 @@ class ExposureCompound(AbstractElement):
         values[self.key] = self.input_as.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
+        bound_lower = self.bounds[0] if bound_lower is None else bound_lower
+        bound_upper = self.bounds[1] if bound_upper is None else bound_upper
+        self.bounds = (bound_lower, bound_upper)
         self.input_as.set_bounds(
             bound_lower=bound_lower,
             bound_upper=bound_upper
         )
+        self.text_element.update(
+            value=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})'
+        )
         return
     def get(self):
         return self.input_as.get()
+
+
 ## Framerate Compound
 class FramerateCompound(AbstractElement):
     # Cosntructor
@@ -310,8 +445,9 @@ class FramerateCompound(AbstractElement):
             self,
             element_exposure_behavior: ExposureCompound,
             element_exposure_gfp: ExposureCompound,
+            icon, icon_size,
             key: str = 'framerate',
-            text: str = "Frame Rate between: 1-48",
+            text: str = "Imaging Frame Rate (min:1, max:48)",
             bounds=(1, 48),
             type_caster = int
         ) -> None:
@@ -319,9 +455,12 @@ class FramerateCompound(AbstractElement):
         self.element_exposure_behavior = element_exposure_behavior
         self.element_exposure_gfp = element_exposure_gfp
         self.key = key
+        self.icon = icon
+        self.icon_size = icon_size
         self.bounds = bounds
         self.button = sg.Button(
-            button_text='framerate-icon',
+            image_data=icon,
+            image_size=icon_size,
             disabled=True,
             enable_events=False
         )
@@ -332,8 +471,11 @@ class FramerateCompound(AbstractElement):
             key=self.key, default_text='20', size=3, type_caster=type_caster,
             bounds=self.bounds
         )
+        self.unit = sg.Text(
+            text='Hz'
+        )
         self.elements = [
-            self.button, self.text, *self.input_as.elements
+            self.button, self.text, *self.input_as.elements, self.unit
         ]
         self.events = {
             self.key
@@ -348,8 +490,8 @@ class FramerateCompound(AbstractElement):
         self.element_exposure_behavior.set_bounds(bound_upper=bound_upper)
         self.element_exposure_gfp.set_bounds(bound_upper=bound_upper)
         # Handle
-        self.element_exposure_behavior.handle(framerate = framerate)
-        self.element_exposure_gfp.handle(framerate = framerate)
+        self.element_exposure_behavior.handle(framerate=framerate)
+        self.element_exposure_gfp.handle(framerate=framerate)
         return
     def add_values(self, values):
         values[self.key] = self.input_as.get()
@@ -362,6 +504,65 @@ class FramerateCompound(AbstractElement):
         return
     def get(self):
         return self.input_as.get()
+# ## Framerate Compound
+# class FramerateCompound(AbstractElement):
+#     # Cosntructor
+#     def __init__(
+#             self,
+#             element_exposure_behavior: ExposureCompound,
+#             element_exposure_gfp: ExposureCompound,
+#             key: str = 'framerate',
+#             text: str = "Frame Rate between: 1-48",
+#             bounds=(1, 48),
+#             type_caster = int
+#         ) -> None:
+#         super().__init__()
+#         self.element_exposure_behavior = element_exposure_behavior
+#         self.element_exposure_gfp = element_exposure_gfp
+#         self.key = key
+#         self.bounds = bounds
+#         self.button = sg.Button(
+#             button_text='framerate-icon',
+#             disabled=True,
+#             enable_events=False
+#         )
+#         self.text = sg.Text(
+#             text=text
+#         )
+#         self.input_as = InputAutoselect(
+#             key=self.key, default_text='20', size=3, type_caster=type_caster,
+#             bounds=self.bounds
+#         )
+#         self.elements = [
+#             self.button, self.text, *self.input_as.elements
+#         ]
+#         self.events = {
+#             self.key
+#         }
+#         return
+#     # Handle
+#     def handle(self, **kwargs):
+#         self.input_as.handle(**kwargs)
+#         framerate = self.get()
+#         # Update Bounds
+#         bound_upper = int( 995000/framerate )
+#         self.element_exposure_behavior.set_bounds(bound_upper=bound_upper)
+#         self.element_exposure_gfp.set_bounds(bound_upper=bound_upper)
+#         # Handle
+#         self.element_exposure_behavior.handle(framerate = framerate)
+#         self.element_exposure_gfp.handle(framerate = framerate)
+#         return
+#     def add_values(self, values):
+#         values[self.key] = self.input_as.get()
+#         return
+#     def set_bounds(self, bound_lower=None, bound_upper=None):
+#         self.input_as.set_bounds(
+#             bound_lower=bound_lower,
+#             bound_upper=bound_upper
+#         )
+#         return
+#     def get(self):
+#         return self.input_as.get()
 ## 
 class InputWithIncrements(AbstractElement):
     # Constructor
