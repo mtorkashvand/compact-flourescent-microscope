@@ -786,6 +786,9 @@ class ZInterpolationTracking(AbstractElement):
         event = kwargs['event']
         if event == self.key_checkbox:
             p_disabled = not self.checkbox.get()
+            client_cli_cmd = "DO _tracker_interpolate_z_tracking {}".format(int(self.checkbox.get()))
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
             button_color = self.color_disabled if p_disabled else self.color_unset
             self.p1.update(disabled=p_disabled, button_color=button_color)
             self.p2.update(disabled=p_disabled, button_color=button_color)

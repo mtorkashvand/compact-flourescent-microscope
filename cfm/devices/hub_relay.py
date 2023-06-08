@@ -78,6 +78,9 @@ class WormTrackerHub(Hub):
     def _logger_shutdown(self):
         self.send("logger shutdown")
 
+    def _tracker_interpolate_z_tracking(self, yes_no):
+        self.send("tracker interpolate_z_tracking {}".format(yes_no))
+
     def _displayer_set_shape(self, y, x):
         # TODO: separate functions for cameras?
         self.send("displayer_behavior set_shape {} {}".format(y, x))

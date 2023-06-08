@@ -654,6 +654,14 @@ class TrackerDevice():
         msg = "{} {} {}".format( time.time(), self.name, msg )
         self.command_publisher.send(f"logger {msg}")
         return
+    
+    def interpolate_z_tracking(self, yes_no):
+        if isinstance(yes_no, bool):
+            self.interpolation_tracking = yes_no
+        elif isinstance(yes_no, int):
+            self.interpolation_tracking = yes_no == 1
+        else:
+            self.interpolation_tracking = yes_no.lower() == 'true'
 
 
     def publish_status(self):
