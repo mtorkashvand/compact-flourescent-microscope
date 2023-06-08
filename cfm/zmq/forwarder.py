@@ -64,7 +64,6 @@ def main():
     )
     proxy_thread.start()
     proxy_thread.join()
-    print("AFTER DEATH! FORWARDER")
 
 if __name__ == "__main__":
     main()
