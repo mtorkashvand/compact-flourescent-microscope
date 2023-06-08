@@ -23,17 +23,12 @@ Options:
                                             [default: 1]
     
 """
-
-# import os
-# import json
 import time
-# from typing import Tuple
 
 from docopt import docopt
 
 from cfm.zmq.hub import Hub
 from cfm.zmq.utils import parse_host_and_port
-# from wormtracker_scope.devices.utils import array_props_from_string
 
 class WormTrackerHub(Hub):
     """This is a central hub that is responsible for subscribing and publishing
@@ -175,16 +170,6 @@ class WormTrackerHub(Hub):
         # TODO: separate functions for cameras?
         self.send("FlirCameraGCaMP set_exposure_framerate {} {}".format(exposure, rate))
 
-    # def _flir_camera_set_height(self, height):
-    #     # TODO: separate functions for cameras?
-    #     self.send("FlirCameraBehavior set_height {}".format(height))
-    #     self.send("FlirCameraGCaMP set_height {}".format(height))
-
-    # def _flir_camera_set_width(self, width):
-    #     # TODO: separate functions for cameras?
-    #     self.send("FlirCameraBehavior set_width {}".format(width))
-    #     self.send("FlirCameraGCaMP set_width {}".format(width))
-
     def _flir_camera_set_shape(self, z, y, x, b):
         self.send("FlirCameraBehavior set_region {} {} {} {}".format(z, y, x, b))
         self.send("FlirCameraGCaMP set_region {} {} {} {}".format(z, y, x, b))
@@ -200,6 +185,7 @@ class WormTrackerHub(Hub):
 
     def _teensy_commands_set_led(self, led_name, intensity):
         self.send("teensy_commands set_led {} {}".format(led_name, intensity))
+
     def _teensy_commands_set_toggle_led(self, state_str):
         self.send("teensy_commands toggle_led_set {}".format(state_str))
 
