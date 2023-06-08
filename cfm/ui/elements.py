@@ -6,7 +6,9 @@ import PySimpleGUI as sg
 from cfm.zmq.client_with_gui import GUIClient
 
 # Parameters
-
+BACKGROUND_COLOR = '#B3B6B7'
+TEXT_COLOR = '#1B2631'
+BUTTON_COLOR = '#626567'
 # Methods
 ## Input for Ports
 def sg_input_port(key, port):
@@ -156,7 +158,8 @@ class LEDCompound(AbstractElement):
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text = sg.Text(
-            text=text
+            text=text,
+            background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
             key=self.key_input, default_text='0', size=3, type_caster=type_caster,
@@ -225,7 +228,8 @@ class LEDIR(AbstractElement):
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text = sg.Text(
-            text=text
+            text=text,
+            background_color = BACKGROUND_COLOR
         )
         self.input = sg.Input(default_text='100', size=3, disabled=True, key='')
         self.elements = [
@@ -278,7 +282,8 @@ class ToggleRecording(AbstractElement):
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text = sg.Text(
-            text=self.text_off
+            text=self.text_off, s=15,
+            background_color = BACKGROUND_COLOR
         )
         self.elements = [
             self.button, self.text
@@ -332,10 +337,11 @@ class ToggleTracking(AbstractElement):
             image_data=self.icon_off,
             image_size=self.icon_size,
             key=self.key_toggle,
-            button_color=(sg.theme_background_color(),sg.theme_background_color())
+            button_color=(sg.theme_background_color(), sg.theme_background_color())
         )
         self.text = sg.Text(
-            text=self.text_off
+            text=self.text_off, s=16,
+            background_color = BACKGROUND_COLOR
         )
         self.elements = [
             self.button, self.text
@@ -392,14 +398,16 @@ class ExposureCompound(AbstractElement):
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text_element = sg.Text(
-            text=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})'
+            text=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})', s=29,
+            background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
             key=self.key, default_text='18000', size=6, type_caster=type_caster,
             bounds=self.bounds
         )
         self.unit = sg.Text(
-            text='\U000003bcs'
+            text='\U000003bcs',
+            background_color = BACKGROUND_COLOR
         )
         self.elements = [
             self.button, self.text_element, *self.input_as.elements, self.unit
@@ -465,14 +473,16 @@ class FramerateCompound(AbstractElement):
             enable_events=False
         )
         self.text = sg.Text(
-            text=text
+            text=text, s=29,
+            background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
-            key=self.key, default_text='20', size=3, type_caster=type_caster,
+            key=self.key, default_text='20', size=6, type_caster=type_caster,
             bounds=self.bounds
         )
         self.unit = sg.Text(
-            text='Hz'
+            text='Hz',
+            background_color = BACKGROUND_COLOR
         )
         self.elements = [
             self.button, self.text, *self.input_as.elements, self.unit
@@ -504,66 +514,7 @@ class FramerateCompound(AbstractElement):
         return
     def get(self):
         return self.input_as.get()
-# ## Framerate Compound
-# class FramerateCompound(AbstractElement):
-#     # Cosntructor
-#     def __init__(
-#             self,
-#             element_exposure_behavior: ExposureCompound,
-#             element_exposure_gfp: ExposureCompound,
-#             key: str = 'framerate',
-#             text: str = "Frame Rate between: 1-48",
-#             bounds=(1, 48),
-#             type_caster = int
-#         ) -> None:
-#         super().__init__()
-#         self.element_exposure_behavior = element_exposure_behavior
-#         self.element_exposure_gfp = element_exposure_gfp
-#         self.key = key
-#         self.bounds = bounds
-#         self.button = sg.Button(
-#             button_text='framerate-icon',
-#             disabled=True,
-#             enable_events=False
-#         )
-#         self.text = sg.Text(
-#             text=text
-#         )
-#         self.input_as = InputAutoselect(
-#             key=self.key, default_text='20', size=3, type_caster=type_caster,
-#             bounds=self.bounds
-#         )
-#         self.elements = [
-#             self.button, self.text, *self.input_as.elements
-#         ]
-#         self.events = {
-#             self.key
-#         }
-#         return
-#     # Handle
-#     def handle(self, **kwargs):
-#         self.input_as.handle(**kwargs)
-#         framerate = self.get()
-#         # Update Bounds
-#         bound_upper = int( 995000/framerate )
-#         self.element_exposure_behavior.set_bounds(bound_upper=bound_upper)
-#         self.element_exposure_gfp.set_bounds(bound_upper=bound_upper)
-#         # Handle
-#         self.element_exposure_behavior.handle(framerate = framerate)
-#         self.element_exposure_gfp.handle(framerate = framerate)
-#         return
-#     def add_values(self, values):
-#         values[self.key] = self.input_as.get()
-#         return
-#     def set_bounds(self, bound_lower=None, bound_upper=None):
-#         self.input_as.set_bounds(
-#             bound_lower=bound_lower,
-#             bound_upper=bound_upper
-#         )
-#         return
-#     def get(self):
-#         return self.input_as.get()
-## 
+
 class InputWithIncrements(AbstractElement):
     # Constructor
     def __init__(self, text:str, key: str, default_value: int, increments: List[int] = [-1, 1], bounds: List[int] = [-1024, 1024], type_caster=int) -> None:
@@ -581,13 +532,13 @@ class InputWithIncrements(AbstractElement):
         }
         self.events = set(self.key_to_offset)
         self.events.add(self.key)
-        self.input = sg.Input(default_text=self.default_value, key=key, size=5)
+        self.input = sg.Input(default_text=self.default_value, key=key, size=4)
         self.elements = [
-            sg.Text(self.text)
+            sg.Text(self.text, background_color = BACKGROUND_COLOR)
         ] + [
-            sg.Button(button_text=f"{inc}",key=event) for event, inc in self.key_to_offset.items() if inc < 0
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1)) for event, inc in self.key_to_offset.items() if inc < 0
         ] + [ self.input ] + [
-            sg.Button(button_text=f"{inc}",key=event) for event, inc in self.key_to_offset.items() if inc > 0
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1)) for event, inc in self.key_to_offset.items() if inc > 0
         ]
         return
     # Handle
@@ -644,8 +595,8 @@ class CombosJoined(AbstractElement):
         # Elements
         assert self.default_v1 in self.v1_to_v2s, "`default_v1` is not in `v1_to_v2s`"
         assert self.default_v2 in self.v1_to_v2s[self.default_v1], "`default_v2` is not in `v1_to_v2s[default_v1]`"
-        self.text1 = sg.Text(text1)  # TODO: add tooltip
-        self.text2 = sg.Text(text2) # TODO: add tooltip
+        self.text1 = sg.Text(text1, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
+        self.text2 = sg.Text(text2, background_color = BACKGROUND_COLOR) # TODO: add tooltip
         self.combo1 = sg.Combo(
             values=self.v2_to_v1s[self.default_v2],
             default_value=self.default_v1,
@@ -697,7 +648,7 @@ class InputSlider(AbstractElement):
         self.size_input = size_input
         self.type_caster = type_caster
         # Elements
-        self.text = sg.Text(text)  # add tooltip `tooltip`
+        self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # add tooltip `tooltip`
         self.input = sg.Input(
             key=self.key_input,
             default_text=str(default_value),
@@ -735,9 +686,9 @@ class ZInterpolationTracking(AbstractElement):
     def __init__(self) -> None:
         super().__init__()
         self.key = "ZINTERP"
-        self.color_disabled = "#555555"
-        self.color_set = "#00ff00"
-        self.color_unset = "#ff0000"
+        self.color_disabled = BACKGROUND_COLOR
+        self.color_set = "#0B5345"
+        self.color_unset = BUTTON_COLOR
         self.key_checkbox = f"{self.key}-CHECKBOX"
         self.key_p1 = f"{self.key}-P1"
         self.key_p2 = f"{self.key}-P2"
@@ -747,7 +698,8 @@ class ZInterpolationTracking(AbstractElement):
             text="Plane-Interpolation Z-Tracking",
             key=self.key_checkbox,
             enable_events=True,
-            default=False
+            default=False,
+            background_color = BACKGROUND_COLOR
         )
         self.p1 = sg.Button(
             button_text="Set Point 1",

@@ -42,6 +42,9 @@ from cfm.icons.icons import (
 
 # Parameters
 DEBUG = True
+BACKGROUND_COLOR = '#B3B6B7'
+TEXT_COLOR = '#1B2631'
+BUTTON_COLOR = '#626567'
 ICON_SIZE = (64, 64)
 # These numbers are subject to change based on the camera model and its orientation when mounted.
 CAMERA_X_MAX = 1920
@@ -125,7 +128,7 @@ ui_tracking_toggle = ToggleTracking(
 elements.append(ui_tracking_toggle)
 
 ui_offset_behavior_x = InputWithIncrements(
-    text = "Offset Behavior X: ",
+    text = "X Offset",
     key="offset_behavior_x",
     default_value=default_b_x_offset,
     bounds=[-x_bound, x_bound],
@@ -138,7 +141,7 @@ ui_offset_behavior_x = InputWithIncrements(
 elements.append(ui_offset_behavior_x)
 
 ui_offset_behavior_y = InputWithIncrements(
-    text = "Offset Behavior Y: ",
+    text = "Y Offset",
     key="offset_behavior_y",
     default_value=default_b_y_offset,
     bounds=[-y_bound, y_bound],
@@ -151,7 +154,7 @@ ui_offset_behavior_y = InputWithIncrements(
 elements.append(ui_offset_behavior_y)
 
 ui_offset_gcamp_x = InputWithIncrements(
-    text = "Offset GCaMP X: ",
+    text = "X Offset",
     key="offset_gcamp_x",
     default_value=default_g_x_offset,
     bounds=[-x_bound, x_bound],
@@ -164,7 +167,7 @@ ui_offset_gcamp_x = InputWithIncrements(
 elements.append(ui_offset_gcamp_x)
 
 ui_offset_gcamp_y = InputWithIncrements(
-    text = "Offset GCaMP Y: ",
+    text = "Y Offset",
     key="offset_gcamp_y",
     default_value=default_g_y_offset,
     bounds=[-y_bound, y_bound],
@@ -240,11 +243,13 @@ elements.append(ui_interpolation_tracking)
 
 folder_browser_data = sg.FolderBrowse(
     button_text = "Browse",
+    button_color=BUTTON_COLOR,
     target = "data_directory",
     initial_folder = "."
 )
 folder_browser_logger = sg.FolderBrowse(
     button_text = "Browse",
+    button_color=BUTTON_COLOR,
     target = "logger_directory",
     initial_folder = "."
 )
@@ -252,19 +257,68 @@ folder_browser_logger = sg.FolderBrowse(
 led_column_layout = sg.Column(
     [[*ui_led_ir.elements], 
      [*ui_led_gfp.elements], 
-     [*ui_led_opt.elements]]
+     [*ui_led_opt.elements]],
+    background_color = BACKGROUND_COLOR
 )
 exp_fps_column_layout = sg.Column(
     [[*ui_framerate.elements],
      [*ui_exposure_behavior.elements],
-     [*ui_exposure_gfp.elements]]
+     [*ui_exposure_gfp.elements]],
+    background_color = BACKGROUND_COLOR
+)
+r_y_offset_layout = sg.Column(
+    [
+        [element_i] for element_i in ui_offset_behavior_y.elements
+    ],
+    element_justification='center',
+    background_color = BACKGROUND_COLOR
+)
+
+g_y_offset_layout = sg.Column(
+    [
+        [element_i] for element_i in ui_offset_gcamp_y.elements
+    ],
+    element_justification='center',
+    background_color = BACKGROUND_COLOR
+)
+
+image_r_x_offset_layout = sg.Column(
+    [
+        [sg.Image(key="img_frame_r", size=shape)], [*ui_offset_behavior_x.elements]
+    ],
+    element_justification='center',
+    background_color = BACKGROUND_COLOR
+)
+
+image_g_x_offset_layout = sg.Column(
+    [
+        [sg.Image(key="img_frame_g", size=shape)], [*ui_offset_gcamp_x.elements]
+    ],
+    element_justification='center',
+    background_color = BACKGROUND_COLOR
+)
+
+directories = sg.Column(
+    [
+        [sg.Text("Data Directory: ", s=(13), background_color = BACKGROUND_COLOR),
+        folder_browser_data, sg.Input(key="data_directory",
+                                      default_text=r"./",
+                                      size=60,
+                                      background_color = BACKGROUND_COLOR)],
+        [sg.Text("Logger Directory: ", s=(13), background_color = BACKGROUND_COLOR),
+        folder_browser_logger, sg.Input(key="logger_directory",
+                                        default_text=r"./",
+                                        size=60,
+                                        background_color = BACKGROUND_COLOR)]
+    ],
+    background_color = BACKGROUND_COLOR
 )
 
 layout = [
     [
         *ui_return_handler.elements,
     ],[
-        *ui_recording_toggle.elements, *ui_tracking_toggle.elements
+        *ui_recording_toggle.elements, *ui_tracking_toggle.elements, directories
     ],[
         sg.HorizontalSeparator(),
     ],[
@@ -274,19 +328,11 @@ layout = [
     ],[
         *ui_interpolation_tracking.elements,
     ],[
-        sg.Text("data_directory: "),
-        folder_browser_data, sg.Input(key="data_directory", default_text=r"./", size=30),
-        sg.Text("logger_directory: "),
-        folder_browser_logger, sg.Input(key="logger_directory", default_text=r"./", size=30),
-    ],[
         sg.HorizontalSeparator(),
     ],[
-        sg.Image(key="img_frame_r", size=shape),
-        sg.Image(key="img_frame_g", size=shape),
-    ],[
-        *ui_offset_behavior_x.elements, *ui_offset_behavior_y.elements,
-    ],[
-        *ui_offset_gcamp_x.elements, *ui_offset_gcamp_y.elements,
+        [r_y_offset_layout, image_r_x_offset_layout, 
+         sg.VSeparator(), 
+         g_y_offset_layout, image_g_x_offset_layout]
     ],[
         sg.HorizontalSeparator(),
     ],[
@@ -304,7 +350,8 @@ for element in elements:
 window = sg.Window(
     'OpenAutoScope2.0 GUI',
     layout,
-    finalize=True
+    finalize=True,
+    background_color=BACKGROUND_COLOR
 )
 ui_return_handler.set_window(window)
 gui_client = GUIClient(port=server_client, port_forwarder_in=f"L{forwarder_in}")
