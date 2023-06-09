@@ -31,7 +31,7 @@ from cfm.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
     ZInterpolationTracking, ToggleRecording, ToggleTracking,
-    XYGamePad, ZGamePad
+    XYGamePad, ZGamePad, FolderBrowser
 )
 
 from cfm.icons.icons import *
@@ -252,6 +252,10 @@ elements.append(ui_xygamepad)
 ui_zgamepad = ZGamePad(icon_zpos=ICON_Z_POS, icon_zneg=ICON_Z_NEG)
 elements.append(ui_zgamepad)
 
+
+ui_folder_browser = FolderBrowser()
+elements.append(ui_folder_browser)
+
 #####################
 #### Layouts
 #####################
@@ -314,11 +318,7 @@ image_g_x_offset_layout = sg.Column(
 
 directories = sg.Column(
     [
-        [sg.Text("Data Directory: ", s=(13), background_color = BACKGROUND_COLOR),
-        folder_browser_data, sg.Input(key="data_directory",
-                                      default_text=r"./",
-                                      size=60,
-                                      background_color = BACKGROUND_COLOR)],
+        ui_folder_browser.elements,
         [sg.Text("Logger Directory: ", s=(13), background_color = BACKGROUND_COLOR),
         folder_browser_logger, sg.Input(key="logger_directory",
                                         default_text=r"./",
@@ -459,13 +459,13 @@ window.close()
 # - [x] exposures: icon + text + `input`
 # - [x] z-interp: checkbox + text + 3-buttons
 # - [x] browse folder: add path to tooltip instead of text box
-# - [ ] 4 buttons x-y directions + `input` for speed
-# - [ ] 2 buttons for z direction + `input`
-# - [ ] start/stop recording same button -> change icon
-# - [ ] start/stop tracking same button -> change icon
+# - [x] 4 buttons x-y directions + `input` for speed
+# - [x] 2 buttons for z direction + `input`
+# - [x] start/stop recording same button -> change icon
+# - [x] start/stop tracking same button -> change icon
 # - [ ] display radio buttons: overlay or single
-# - [ ] vertical offset controllers
-# - [ ] crashes after the second stop/start
+# - [x] vertical offset controllers
+# - [x] crashes after the second stop/start
 # - [X] detect the teensy port automatically, and get rid of its element
 # - [ ] changing format brings the binsize back to 1 (can't set it to anything other than 1)
 # - [ ] bounds for the 'inputwithincrement' should depend on the binsize and the format

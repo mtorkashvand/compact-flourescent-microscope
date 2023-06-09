@@ -40,6 +40,7 @@ class Logger():
         self.socket.connect("tcp://localhost:{}".format(port))
         self.socket.setsockopt(zmq.SUBSCRIBE, b"logger")
 
+        # Open File
         self.filename = make_timestamped_filename(directory, "log", "txt")
         self.file = open(self.filename, 'w+')
 
@@ -64,6 +65,15 @@ class Logger():
     def prepend_timestamp(self, msg: str) -> str:
         """Adds date and time to the string argument."""
         return "{} {}".format(str(time.time()), msg)
+    
+    def set_directory(self, directory):
+        # Close File
+        self.file.close()
+        # Create New File
+        self.filename = make_timestamped_filename(directory, "log", "txt")
+        self.file = open(self.filename, 'w+')
+        # Return
+        return
 
 def main():
     """main function"""

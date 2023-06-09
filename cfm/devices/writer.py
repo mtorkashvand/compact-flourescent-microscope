@@ -205,6 +205,10 @@ class  WriteSession(multiprocessing.Process):
     def set_duration(self, duration):
         self.max_frame_no = duration
         print("the number of frames are set to: {}, and of course hello world!!".format(duration))
+    
+    def set_directory(self, directory):
+        self.directory = directory
+        return
 
 def main():
     """CLI entry point."""

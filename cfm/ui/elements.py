@@ -184,7 +184,7 @@ class LEDCompound(AbstractElement):
         elif event == self.key_input:
             self.input_as.handle(**kwargs)
         if self.toggle:
-            intensity = self.type_caster(self.input_as.get() * 2.55)
+            intensity = self.type_caster(self.get() * 2.55)
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} {intensity}"
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
@@ -195,7 +195,7 @@ class LEDCompound(AbstractElement):
 
         return
     def add_values(self, values):
-        values[self.key] = self.input_as.get()
+        values[self.key] = self.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
         self.input_as.set_bounds(
@@ -421,7 +421,7 @@ class ExposureCompound(AbstractElement):
     def handle(self, **kwargs):
         framerate = kwargs['framerate']
         self.input_as.handle(**kwargs)
-        exposure_time = self.input_as.get()
+        exposure_time = self.get()
         client_cli_cmd = "DO _flir_camera_set_exposure_framerate_{} {} {}".format(
             self.camera_name, exposure_time, framerate
         )
@@ -429,7 +429,7 @@ class ExposureCompound(AbstractElement):
         self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
-        values[self.key] = self.input_as.get()
+        values[self.key] = self.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
         bound_lower = self.bounds[0] if bound_lower is None else bound_lower
@@ -505,7 +505,7 @@ class FramerateCompound(AbstractElement):
         self.element_exposure_gfp.handle(framerate=framerate)
         return
     def add_values(self, values):
-        values[self.key] = self.input_as.get()
+        values[self.key] = self.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
         self.input_as.set_bounds(
@@ -875,7 +875,7 @@ class XYGamePad(AbstractElement):
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
-        values[self.key] = self.input_as.get()
+        values[self.key] = self.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
         self.input_as.set_bounds(
@@ -971,7 +971,7 @@ class ZGamePad(AbstractElement):
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
-        values[self.key] = self.input_as.get()
+        values[self.key] = self.get()
         return
     def set_bounds(self, bound_lower=None, bound_upper=None):
         self.input_as.set_bounds(
@@ -987,3 +987,47 @@ class ZGamePad(AbstractElement):
             button.bind('<ButtonPress>', "-Press", propagate=False)
             button.bind('<ButtonRelease>', "-Release", propagate=False)
         return
+## Folder Browser
+class FolderBrowser(AbstractElement):
+    # Constructor
+    def __init__(self) -> None:
+        super().__init__()
+        self.key = "data_directory"
+        self.key_browser = f"{self.key}-BROWSER"
+        self.folder_browser = sg.FolderBrowse(
+            key=self.key_browser,
+            button_text = "Browse",
+            button_color=BUTTON_COLOR,
+            target = self.key,
+            initial_folder = "."
+        )
+        self.input = sg.Input(
+            key = self.key,
+            default_text=r"./",
+            size=90,
+            readonly=True,
+            enable_events=True
+        )
+        self.elements = [
+            sg.Text("Data Directory: ", s=(13), background_color = BACKGROUND_COLOR),
+            self.folder_browser,
+            self.input
+        ]
+        self.events = {
+            self.key,
+            self.key_browser
+        }
+        return
+    # Handle
+    def handle(self, **kwargs):
+        # Stop velocity
+        directory = self.get()
+        client_cli_cmd = f"DO _set_directories {directory}"
+        print(f"Executing: '{client_cli_cmd}'")
+        self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return self.input.get()

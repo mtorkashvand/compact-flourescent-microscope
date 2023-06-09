@@ -133,6 +133,11 @@ class WormTrackerHub(Hub):
         self.send("writer_behavior toggle")
         self.send("writer_gcamp toggle")
 
+    def _set_directories(self, directory):
+        self.send(f"writer_behavior set_directory {directory}")
+        self.send(f"writer_gcamp set_directory {directory}")
+        self.send(f"logger set_directory {directory}")
+
     def _writer_shutdown(self):
         # TODO: separate functions for cameras?
         self.send("writer_behavior shutdown")
