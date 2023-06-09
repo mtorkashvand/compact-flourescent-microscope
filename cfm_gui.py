@@ -259,19 +259,6 @@ elements.append(ui_folder_browser)
 #####################
 #### Layouts
 #####################
-folder_browser_data = sg.FolderBrowse(
-    button_text = "Browse",
-    button_color=BUTTON_COLOR,
-    target = "data_directory",
-    initial_folder = "."
-)
-folder_browser_logger = sg.FolderBrowse(
-    button_text = "Browse",
-    button_color=BUTTON_COLOR,
-    target = "logger_directory",
-    initial_folder = "."
-)
-
 led_column_layout = sg.Column(
     [[*ui_led_ir.elements], 
      [*ui_led_gfp.elements], 
@@ -319,11 +306,6 @@ image_g_x_offset_layout = sg.Column(
 directories = sg.Column(
     [
         ui_folder_browser.elements,
-        [sg.Text("Logger Directory: ", s=(13), background_color = BACKGROUND_COLOR),
-        folder_browser_logger, sg.Input(key="logger_directory",
-                                        default_text=r"./",
-                                        size=60,
-                                        background_color = BACKGROUND_COLOR)]
     ],
     background_color = BACKGROUND_COLOR
 )
