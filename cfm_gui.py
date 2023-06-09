@@ -30,15 +30,11 @@ from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
-    ZInterpolationTracking, ToggleRecording, ToggleTracking
+    ZInterpolationTracking, ToggleRecording, ToggleTracking,
+    XYGamePad
 )
 
-from cfm.icons.icons import (
-    ICON_LED_GFP_OFF, ICON_LED_GFP_ON, ICON_LED_OPT_OFF, ICON_LED_OPT_ON,
-    ICON_LED_IR_ON, ICON_LED_IR_OFF, ICON_EXPOSURE, ICON_FPS,
-    ICON_RECORDING_OFF, ICON_RECORDING_ON,
-    ICON_TRACKING_OFF, ICON_TRACKING_ON
-)
+from cfm.icons.icons import *
 
 # Parameters
 DEBUG = True
@@ -106,6 +102,11 @@ def run_cfm_with_gui(**kwargs):
 # TODO: use `Menu Element` to add menu bars on top of the window
 # TODO:
 
+
+
+#####################
+#### UI Elements
+#####################
 elements = []
 
 ui_return_handler = ReturnHandler()
@@ -241,6 +242,16 @@ elements.append(ui_framerate)
 ui_interpolation_tracking = ZInterpolationTracking()
 elements.append(ui_interpolation_tracking)
 
+
+ui_xygamepad = XYGamePad(
+    icon_xleft=ICON_X_NEG, icon_xright=ICON_X_POS,
+    icon_yleft=ICON_Y_NEG, icon_yright=ICON_Y_POS
+)
+elements.append(ui_xygamepad)
+
+#####################
+#### Layouts
+#####################
 folder_browser_data = sg.FolderBrowse(
     button_text = "Browse",
     button_color=BUTTON_COLOR,
@@ -322,7 +333,7 @@ layout = [
     ],[
         sg.HorizontalSeparator(),
     ],[
-        [exp_fps_column_layout, sg.VSeparator(), led_column_layout, sg.VSeparator()]
+        [exp_fps_column_layout, sg.VSeparator(), led_column_layout, sg.VSeparator(), *ui_xygamepad.elements]
     ],[
         sg.HorizontalSeparator(),
     ],[
@@ -379,6 +390,8 @@ zero_displayers()
 # DEBUG TODO:  change code to have different `elements`` for each functionality, e.g. like CombosJoined
 
 event, values = window.read(timeout=0)
+# Binding Press/Release Buttons
+ui_xygamepad.bind()
 
 offset_bx = x_bound + int(values['offset_behavior_x'])
 offset_by = y_bound + int(values['offset_behavior_y'])

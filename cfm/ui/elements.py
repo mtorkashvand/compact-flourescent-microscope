@@ -84,7 +84,7 @@ class ReturnHandler(AbstractElement):
         return
 ## Input Element with Autoselect and Enter Event handling
 class InputAutoselect(AbstractElement):
-    def __init__(self, key: str, default_text: int, size, type_caster=int, bounds=(None, None)) -> None:
+    def __init__(self, key: str, default_text: int, size, type_caster=int, bounds=(None, None), font=None) -> None:
         super().__init__()
         self.key = key
         self.default_text = default_text
@@ -94,7 +94,8 @@ class InputAutoselect(AbstractElement):
             default_text=self.default_text,
             key=self.key,
             justification='righ',
-            size=size
+            size=size,
+            font=font
         )
         self.events = { self.key }
         self.elements = [ self.input ]
@@ -775,3 +776,118 @@ class ZInterpolationTracking(AbstractElement):
             'p2': self.p2_is_set,
             'p3': self.p3_is_set,
         }
+
+## XY Game Pad
+class XYGamePad(AbstractElement):
+    # Constructor
+    def __init__(self,
+            icon_xleft, icon_xright, icon_yleft, icon_yright,
+            key="xypad", input_size=5, input_bounds=(0,2048),
+            font=(None,19),
+            icon_size: Tuple[int, int] = (64, 64),
+        ) -> None:
+        super().__init__()
+
+        self.icon_xleft = icon_xleft
+        self.icon_xright = icon_xright
+        self.icon_yleft = icon_yleft
+        self.icon_yright = icon_yright
+        self.icon_size = icon_size
+
+        self.key = key
+        self.key_xleft = f"{self.key}_$X$$-$"
+        self.key_xright = f"{self.key}_$X$$+$"
+        self.key_yleft = f"{self.key}_$Y$$-$"
+        self.key_yright = f"{self.key}_$Y$$+$"
+        self.button_xleft = sg.Button(
+            key=self.key_xleft,
+            image_data=self.icon_xleft,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.key_input = f"{self.key}-input"
+        
+        self.button_xright = sg.Button(
+            key=self.key_xright,
+            image_data=self.icon_xright,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.button_yleft = sg.Button(
+            key=self.key_yleft,
+            image_data=self.icon_yleft,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.button_yright = sg.Button(
+            key=self.key_yright,
+            image_data=self.icon_yright,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.input_as = InputAutoselect(
+            key=self.key_input,
+            default_text="0",
+            bounds=input_bounds,
+            size=input_size,
+            type_caster=int,
+            font=font
+        )
+        self.buttons = [
+            self.button_xleft, self.button_xright,
+            self.button_yleft, self.button_yright,
+        ]
+        
+        self.elements = [
+            self.button_xleft,
+            sg.Column(
+                [[self.button_yright], 
+                [*self.input_as.elements], 
+                [self.button_yleft]],
+                background_color = BACKGROUND_COLOR
+            ),
+            self.button_xright,
+        ]
+        self.events = { self.key, self.key_input }
+        for button in self.buttons:
+            self.events.add(button.key)
+            self.events.add( f"{button.key}-Press" )
+            self.events.add( f"{button.key}-Release" )
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        self.input_as.handle(**kwargs)
+        # X Press
+        if event.endswith("-Release"):
+            # Stop velocity
+            motor = 'x' if '$X$' in event else 'y'
+            client_cli_cmd = f"DO _teensy_commands_move{motor} 0"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        elif event.endswith("-Press"):
+            # Set Velocity
+            motor = 'x' if '$X$' in event else 'y'
+            sign = 1 if '$+$' in event else -1
+            speed = self.get()
+            client_cli_cmd = f"DO _teensy_commands_move{motor} {sign*speed}"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.input_as.get()
+        return
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        self.input_as.set_bounds(
+            bound_lower=bound_lower,
+            bound_upper=bound_upper
+        )
+        return
+    def get(self):
+        return self.input_as.get()
+    # Bind Buttons
+    def bind(self):
+        for button in self.buttons:
+            button.bind('<ButtonPress>', "-Press", propagate=False)
+            button.bind('<ButtonRelease>', "-Release", propagate=False)
+        return
