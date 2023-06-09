@@ -795,18 +795,18 @@ class XYGamePad(AbstractElement):
         self.icon_size = icon_size
 
         self.key = key
+        self.key_input = f"{self.key}-input"
         self.key_xleft = f"{self.key}_$X$$-$"
         self.key_xright = f"{self.key}_$X$$+$"
         self.key_yleft = f"{self.key}_$Y$$-$"
         self.key_yright = f"{self.key}_$Y$$+$"
+
         self.button_xleft = sg.Button(
             key=self.key_xleft,
             image_data=self.icon_xleft,
             image_size=self.icon_size,
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
-        self.key_input = f"{self.key}-input"
-        
         self.button_xright = sg.Button(
             key=self.key_xright,
             image_data=self.icon_xright,
@@ -871,6 +871,102 @@ class XYGamePad(AbstractElement):
             sign = 1 if '$+$' in event else -1
             speed = self.get()
             client_cli_cmd = f"DO _teensy_commands_move{motor} {sign*speed}"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.input_as.get()
+        return
+    def set_bounds(self, bound_lower=None, bound_upper=None):
+        self.input_as.set_bounds(
+            bound_lower=bound_lower,
+            bound_upper=bound_upper
+        )
+        return
+    def get(self):
+        return self.input_as.get()
+    # Bind Buttons
+    def bind(self):
+        for button in self.buttons:
+            button.bind('<ButtonPress>', "-Press", propagate=False)
+            button.bind('<ButtonRelease>', "-Release", propagate=False)
+        return
+
+## Z Game Pad
+class ZGamePad(AbstractElement):
+    # Constructor
+    def __init__(self,
+            icon_zpos, icon_zneg,
+            key="zpad", input_size=5, input_bounds=(0,2048),
+            font=(None,19),
+            icon_size: Tuple[int, int] = (64, 64),
+        ) -> None:
+        super().__init__()
+
+        self.icon_zpos = icon_zpos
+        self.icon_zneg = icon_zneg
+        self.icon_size = icon_size
+
+        self.key = key
+        self.key_input = f"{self.key}-input"
+        self.key_zpos = f"{self.key}_$Z$$+$"
+        self.key_zneg = f"{self.key}_$Z$$-$"
+
+
+        self.button_zpos = sg.Button(
+            key=self.key_zpos,
+            image_data=self.icon_zpos,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        self.button_zneg = sg.Button(
+            key=self.key_zneg,
+            image_data=self.icon_zneg,
+            image_size=self.icon_size,
+            button_color=(sg.theme_background_color(),sg.theme_background_color())
+        )
+        
+        self.input_as = InputAutoselect(
+            key=self.key_input,
+            default_text="0",
+            bounds=input_bounds,
+            size=input_size,
+            type_caster=int,
+            font=font
+        )
+        self.buttons = [
+            self.button_zpos, self.button_zneg,
+        ]
+        
+        self.elements = [
+            sg.Column(
+                [[self.button_zpos], 
+                [*self.input_as.elements], 
+                [self.button_zneg]],
+                background_color = BACKGROUND_COLOR
+            ),
+        ]
+        self.events = { self.key, self.key_input }
+        for button in self.buttons:
+            self.events.add(button.key)
+            self.events.add( f"{button.key}-Press" )
+            self.events.add( f"{button.key}-Release" )
+        return
+    # Handle
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        self.input_as.handle(**kwargs)
+        # X Press
+        if event.endswith("-Release"):
+            # Stop velocity
+            client_cli_cmd = f"DO _teensy_commands_movez 0"
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
+        elif event.endswith("-Press"):
+            # Set Velocity
+            sign = 1 if '$+$' in event else -1
+            speed = self.get()
+            client_cli_cmd = f"DO _teensy_commands_movez {sign*speed}"
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return

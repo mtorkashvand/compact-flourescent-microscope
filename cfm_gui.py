@@ -31,7 +31,7 @@ from cfm.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
     ZInterpolationTracking, ToggleRecording, ToggleTracking,
-    XYGamePad
+    XYGamePad, ZGamePad
 )
 
 from cfm.icons.icons import *
@@ -249,6 +249,9 @@ ui_xygamepad = XYGamePad(
 )
 elements.append(ui_xygamepad)
 
+ui_zgamepad = ZGamePad(icon_zpos=ICON_Z_POS, icon_zneg=ICON_Z_NEG)
+elements.append(ui_zgamepad)
+
 #####################
 #### Layouts
 #####################
@@ -333,7 +336,14 @@ layout = [
     ],[
         sg.HorizontalSeparator(),
     ],[
-        [exp_fps_column_layout, sg.VSeparator(), led_column_layout, sg.VSeparator(), *ui_xygamepad.elements]
+        [
+            exp_fps_column_layout,
+            sg.VSeparator(),
+            led_column_layout,
+            sg.VSeparator(),
+            *ui_xygamepad.elements,
+            *ui_zgamepad.elements,
+        ],
     ],[
         sg.HorizontalSeparator(),
     ],[
@@ -392,6 +402,7 @@ zero_displayers()
 event, values = window.read(timeout=0)
 # Binding Press/Release Buttons
 ui_xygamepad.bind()
+ui_zgamepad.bind()
 
 offset_bx = x_bound + int(values['offset_behavior_x'])
 offset_by = y_bound + int(values['offset_behavior_y'])
