@@ -14,7 +14,7 @@ from cfm.zmq.utils import parse_host_and_port
 from cfm.zmq.array import TimestampedSubscriber
 from cfm.devices.utils import array_props_from_string
 
-DEBUG = True
+DEBUG = False
 
 class DualDisplayer:
     def __init__(

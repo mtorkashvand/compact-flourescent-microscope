@@ -124,10 +124,10 @@ class WormTrackerHub(Hub):
         self.send("writer_gcamp stop")
 
     def _tracker_start(self):
-        self.send("tracker start")
+        self.send("tracker_behavior start")
 
     def _tracker_stop(self):
-        self.send("tracker stop")
+        self.send("tracker_behavior stop")
 
     def _writer_toggle(self):
         self.send("writer_behavior toggle")

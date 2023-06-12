@@ -37,7 +37,7 @@ from cfm.ui.elements import (
 from cfm.icons.icons import *
 
 # Parameters
-DEBUG = True
+DEBUG = False
 BACKGROUND_COLOR = '#B3B6B7'
 TEXT_COLOR = '#1B2631'
 BUTTON_COLOR = '#626567'

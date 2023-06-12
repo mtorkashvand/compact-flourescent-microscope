@@ -54,8 +54,12 @@ class Logger():
 
         while self.running:
             msg = self.socket.recv_string()[7:]
-            if msg == "shutdown":
+            msg_parts = msg.split(maxsplit=1)
+            func = msg_parts[0]
+            if func == "shutdown":
                 self.running = False
+            elif func == "set_directory":
+                 self.set_directory(msg_parts[1])
 
             msg = self.prepend_timestamp(msg)
             print(msg, file=self.file, flush=True)
@@ -66,7 +70,7 @@ class Logger():
         """Adds date and time to the string argument."""
         return "{} {}".format(str(time.time()), msg)
     
-    def set_directory(self, directory):
+    def set_directory(self, directory: str):
         # Close File
         self.file.close()
         # Create New File

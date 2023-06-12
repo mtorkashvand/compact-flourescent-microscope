@@ -12,7 +12,7 @@ Different Camera Configuration Serial Numbers:
 - 22591142, 22591117
 """
 
-DEBUG = True
+DEBUG = False
 
 import os
 from subprocess import Popen
