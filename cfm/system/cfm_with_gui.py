@@ -32,7 +32,10 @@ def get_teensy_port():
         if port[1].startswith("Teensy") and if port[2] == "USB VID:PID=%s:%s SNR=%s"%(VENDOR_ID, PRODUCT_ID, SERIAL_NUMBER):
 	        return port[0]
     """
-
+    # DEBUG TODO use the following linkes to change this code
+    # https://pyserial.readthedocs.io/en/latest/tools.html#serial.tools.list_ports.ListPortInfo
+    # https://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
+    return "COM4"
     for port in list(list_ports.comports()):
         if port[1].startswith("Teensy"):
             return port[0]
