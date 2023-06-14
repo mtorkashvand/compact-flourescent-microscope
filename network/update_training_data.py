@@ -10,12 +10,12 @@ def update_training_data(src, dest=None):
     """
     Updates training data located in 'dest' with annotations found in 'dest'.
 
-    Assumption:
+    Assumptions:
     1. The file containing the data in the src directory is named 'data.h5'
     2. 'data.h5' has two groups: 'data' and 'times'
-    3. the frame format save in group 'data' is: [C, Z, Y, X]
+    3. the frame format saved in group 'data' is: [C, Z, Y, X]
     4. there is an 'annotations.h5' file in the src directory.
-    5. 'annotations.h5' has goups names 't_idx', 'x' and 'y'
+    5. 'annotations.h5' has goups named 't_idx', 'x' and 'y'
     6. 'x' and 'y' in the 'annotations.h5' file are normalized coords [0, 1]
     Note:
         These assumptions are to make it compatible with the output of the annotator app.
