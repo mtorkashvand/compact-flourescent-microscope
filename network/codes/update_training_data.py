@@ -13,10 +13,11 @@ def update_training_data(src, dest=None):
     Assumptions:
     1. The file containing the data in the src directory is named 'data.h5'
     2. 'data.h5' has two groups: 'data' and 'times'
-    3. the frame format saved in group 'data' is: [C, Z, Y, X]
+    3. the frame format saved in the group 'data' is: [Y, X]
     4. there is an 'annotations.h5' file in the src directory.
-    5. 'annotations.h5' has goups named 't_idx', 'x' and 'y'
+    5. 'annotations.h5' has goups named 't_idx', 'x' and 'y' and 'worldline_id
     6. 'x' and 'y' in the 'annotations.h5' file are normalized coords [0, 1]
+    7. 'worldline_id' == 1 corresponds to background
     Note:
         These assumptions are to make it compatible with the output of the annotator app.
 
@@ -50,7 +51,7 @@ def update_training_data(src, dest=None):
     
     try:
         sample_slice = src_file["data"][0]
-        _, _, shape_y, shape_x = sample_slice.shape
+        shape_y, shape_x = sample_slice.shape
     except:
         print("Error: src file is empty.")
         src_file.close()
@@ -97,8 +98,11 @@ def update_training_data(src, dest=None):
                 n_datapoints += 1
                 data.resize((n_datapoints, shape_y, shape_x))
                 annotations.resize((n_datapoints, 2))
-                data[n_datapoints-1, :] = src_file["data"][t][0, 0, ...]
-                annotations[n_datapoints-1, :] = [y, x]
+                data[n_datapoints-1, :] = src_file["data"][t][:]
+                if int(annot_file["worldline_id"][idx]) == 1:
+                    annotations[n_datapoints-1, :] = [-1, -1]
+                else:
+                    annotations[n_datapoints-1, :] = [y, x]
     else:
         print("Error: Annotations file is empty.")
 
