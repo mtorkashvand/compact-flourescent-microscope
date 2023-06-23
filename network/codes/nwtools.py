@@ -46,6 +46,7 @@ class AnnotatedDataLoader(Dataset):
         self.windowsize_min_included = windowsize_min_included
         self.windowsize_min_included2 = self.windowsize_min_included//2
         self.crop_size = crop_size
+        self.verbose = verbose
 
         self.gamma_max_deviation = gamma_max_deviation
         self.always_same_rows = always_same_rows
