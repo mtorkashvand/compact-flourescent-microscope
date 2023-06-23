@@ -46,10 +46,10 @@ class AnnotatedDataLoader(Dataset):
         self.windowsize_min_included = windowsize_min_included
         self.windowsize_min_included2 = self.windowsize_min_included//2
         self.crop_size = crop_size
-        self.verbose = verbose
 
         self.gamma_max_deviation = gamma_max_deviation
         self.always_same_rows = always_same_rows
+        self.verbose = verbose
         return
     # Length
     def __len__(self):
@@ -159,7 +159,14 @@ class AnnotatedDataLoader(Dataset):
         print("DEBUG: Attempts to Augment failed!")
         print(f"Image IDX: {idx} Label: {label}, Coords: {coords_new}")
         raise NotImplementedError()
-
+# Collator Functions
+def collate_fn_1d_coords(data):
+    images, coords, _ = zip(*data)
+    coords = np.array(coords)
+    images = np.array(images)[:,None,:,:]
+    images = torch.tensor( images, dtype=torch.float32 )
+    coords = torch.tensor( coords, dtype=torch.float32 )
+    return images, coords
 def collate_fn_3d_input(data):
     images, coords, _ = zip(*data)
     coords = np.array(coords)
@@ -169,32 +176,45 @@ def collate_fn_3d_input(data):
     images_channeled = torch.tensor( images, dtype=torch.float32 )
     coords = torch.tensor( coords, dtype=torch.float32 )
     return images_channeled, coords
-def collate_fn_heatmap(data):
-    images, coords, labels = zip(*data)
-    _img = images[0]
-    images = np.array(images)[:,None,:,:]
-    images = torch.tensor( images, dtype=torch.float32 )
-    heatmaps = []
-    for (i,j), label in zip(coords,labels):
-        if label != 0:
-            img_annotated = np.zeros_like( _img, dtype=np.float32 )
-            img_annotated[j,i] = 100.0
-            img_annotated = cv.GaussianBlur(img_annotated,(11,11), 0)
-            img_annotated = cv.resize(img_annotated, (IMG_OUTPUT_DIM, IMG_OUTPUT_DIM))
-            img_annotated /= img_annotated.max()
-        else:
-            img_annotated = np.zeros( (IMG_OUTPUT_DIM, IMG_OUTPUT_DIM), dtype=np.float32 )
-        heatmaps.append(img_annotated.flatten())
-    heatmaps = torch.tensor( np.array(heatmaps), dtype=torch.float32 )
-    return images, heatmaps
-def collate_fn_1d_coords(data):
-    images, coords, _ = zip(*data)
-    coords = np.array(coords)
-    images = np.array(images)[:,None,:,:]
-    #
-    images = torch.tensor( images, dtype=torch.float32 )
-    coords = torch.tensor( coords, dtype=torch.float32 )
-    return images, coords
+def collate_fn_heatmap_generator(output_image_dim = 100, weighted = True, blur_size = 11, mask_size = 16):
+    def collate_fn_heatmap(data):
+        _n = output_image_dim * output_image_dim
+        images, coords, labels = zip(*data)
+        _img = images[0]
+        images = np.array(images)[:,None,:,:]
+        images = torch.tensor( images, dtype=torch.float32 )
+        heatmaps, weights = [], []
+        weights_constant = np.ones( _n, dtype=np.float32 )
+        for (i,j), label in zip(coords,labels):
+            if label != 0:
+                img_annotated = np.zeros_like( _img, dtype=np.float32 )
+                img_annotated[j,i] = 100.0
+                #############################################################################
+                #### WEIGHTS ####
+                if weighted:
+                    mask = cv.GaussianBlur(img_annotated,(mask_size,mask_size), 0) > 0.0
+                    weights.append( np.array(mask, dtype=np.float32).flatten() )
+                else:
+                    weights.append( weights_constant )
+                #############################################################################
+                img_annotated = cv.GaussianBlur(img_annotated,(blur_size,blur_size), 0)
+                img_annotated = cv.resize(img_annotated, (output_image_dim, output_image_dim))
+                img_annotated /= img_annotated.max()
+                
+                heatmaps.append(img_annotated.flatten())
+            else:
+                heatmaps.append(np.zeros( _n, dtype=np.float32 ))
+                #############################################################################
+                #### WEIGHTS ####
+                _weights = np.zeros(_n, dtype=np.float32)
+                _indices = np.random.randint( 0, _n, mask_size*mask_size )
+                _weights[_indices] = 1.0
+                weights.append( _weights )
+                #############################################################################
+        heatmaps = torch.tensor( np.array(heatmaps), dtype=torch.float32 )
+        return images, heatmaps
+    return collate_fn_heatmap
+
 
 # Models
 ## Model01
