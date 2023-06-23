@@ -1,4 +1,6 @@
 # Modules
+import os
+
 import numpy as np
 
 from tqdm import tqdm
@@ -327,4 +329,93 @@ class Model02(nn.Module):
         x = self.dense(x)
         return x
 
-## Trainers
+# Trainers
+## Coordinates Trainer
+class TrainerCoordinates:
+    # Constructor
+    def __init__(
+            self,
+            model,
+            data_loader_train,
+            data_loader_validation = None,
+            optimizer_name = 'adam',
+            optimizer_lr = 1e-3,
+            device = 'auto',
+            fp_checkpoints = None
+        ) -> None:
+        self.model = model
+        self.data_loader_train = data_loader_train
+        self.data_loader_validation = data_loader_validation if data_loader_validation is not None else self.data_loader_train
+        self.optimizer_name = optimizer_name.lower()
+        self.optimizer_lr = optimizer_lr
+        if self.optimizer_name == 'adam':
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.optimizer_lr)
+        else:
+            raise NotImplementedError()
+        self.device = device
+        if device == 'auto':
+            if torch.cuda.is_available():
+                self.device = 'cuda:0'
+            else:
+                self.device = 'cpu'
+        # Base Path
+        assert fp_checkpoints is not None, 'Checkpoints path should be provided.'
+        _date_key = str(datetime.datetime.now())[:19].replace(':','').replace(' ','_')
+        self.fp_checkpoints = os.path.join(
+            fp_checkpoints,
+            _date_key
+        )
+        return
+    # Train
+    def train(self, n_epochs):
+        model = self.model.to(self.device)
+        loss_fn = torch.nn.MSELoss()
+        logs = []
+        epochs = tqdm( range(n_epochs), desc=f'Loss: {0.0:>7.3f}', position=0 )
+        for i_epoch in epochs:
+            losses_epoch = []
+            steps = tqdm(self.data_loader_train, desc=f'Epoch Steps - Loss: {0.0:>7.3f}',position=1, leave=False)
+            for x_train, y_train in steps:
+                x_train = x_train.to(self.device)
+                y_train = y_train.to(self.device)
+                # Zero your gradients for every batch!
+                self.optimizer.zero_grad()
+
+                # Make predictions for this batch
+                y_train_pred = model(x_train)
+
+                # Compute the loss and its gradients
+                loss = loss_fn(y_train_pred, y_train)
+                loss.backward()
+                loss_value = loss.cpu().item()
+
+                # Adjust learning weights
+                self.optimizer.step()
+                
+                # Log
+                losses_epoch.append(loss_value)
+                steps.set_description(
+                    'Epoch Steps - Loss: {:>7.3f}'.format(loss_value)
+                )
+            logs.append([
+                np.mean(losses_epoch),
+                losses_epoch.copy()
+            ])
+            # Report
+            epochs.set_description(
+                'Loss: {:>7.3f}'.format( logs[-1][0] )
+            )
+            print("\n\n")
+            # Save Model
+            if not os.path.exists(self.fp_checkpoints):
+                os.mkdir(self.fp_checkpoints)
+            fp_model = os.path.join( self.fp_checkpoints, str(i_epoch).zfill(3)+".pt" )
+            torch.save({
+                'epoch': i_epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'loss': np.mean(losses_epoch),
+                },
+                fp_model
+            )
+        return
