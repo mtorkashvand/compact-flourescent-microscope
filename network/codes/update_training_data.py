@@ -64,6 +64,8 @@ def update_training_data(src, dest=None):
         n_datapoints = len(dest_file['data'])
         data = dest_file["data"]
         annotations = dest_file["annotations"]
+        dataset_index = dest_file["index"]
+        index = dataset_index[-1] + 1
     else:
         dest_file = h5py.File(os.path.join(dest, 'training_data.h5'), 'w-')
         group = dest_file["/"]
@@ -80,11 +82,21 @@ def update_training_data(src, dest=None):
             'annotations',
             (0, 2),
             chunks=(1, 2),
-            dtype=np.uint16,
+            dtype=np.int16,
             compression="lzf",
             compression_opts=None,
             maxshape=(None, 2)
         )
+        dataset_index = group.create_dataset(
+            'index',
+            (0, 1),
+            chunks=(1, 1),
+            dtype=np.uint16,
+            compression="lzf",
+            compression_opts=None,
+            maxshape=(None, 1)
+        )
+        index = 0
         n_datapoints = 0
         
 
@@ -98,7 +110,9 @@ def update_training_data(src, dest=None):
                 n_datapoints += 1
                 data.resize((n_datapoints, shape_y, shape_x))
                 annotations.resize((n_datapoints, 2))
+                dataset_index.resize((n_datapoints, 1))
                 data[n_datapoints-1, :] = src_file["data"][t][:]
+                dataset_index[n_datapoints-1, 0] = index
                 if int(annot_file["worldline_id"][idx]) == 1:
                     annotations[n_datapoints-1, :] = [-1, -1]
                 else:
