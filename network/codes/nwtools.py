@@ -88,14 +88,6 @@ class AnnotatedDataLoader(Dataset):
         )
         coords_new = rotate_xy(M_rotation, x_idx, y_idx).astype(np.int32)
 
-        # Label 0
-        if label == 0:
-            coords_no_worm = np.array(
-                [self.windowsize_min_included2, self.windowsize_min_included2],
-                dtype=np.float32
-            )
-            return img_processed, coords_no_worm, label
-
         # If Annotation is close to the edge, discard the "Minimum Window Criteria"
         # windowsize_min_included2 = WINDOWSIZE_MIN_INCLUDED2
         # if np.any(coords_new-windowsize_min_included2 < 0) or np.any(coords_new+windowsize_min_included2 >= np.array([nx, ny])):
@@ -165,7 +157,12 @@ class AnnotatedDataLoader(Dataset):
             imax, jmax = crop_topleft+self.crop_size
             img_processed = img_processed[imin:imax, jmin:jmax]
             coords_new -= crop_topleft[::-1]
-            # Return
+            # No Worm
+            if label == 0:
+                coords_new = np.array(
+                    [self.crop_size//2, self.crop_size//2],
+                    dtype=np.float32
+                )
             if self.verbose:
                 print(f"Image IDX: {idx} Label: {label}, COORD NEW Cropped: {coords_new}")
             return img_processed, coords_new, label
@@ -236,14 +233,6 @@ class AnnotatedDataLoaderDebug(Dataset):
         # Info
         info = np.array([ idx, x_idx, y_idx, label, theta, gamma ], dtype=np.float32)
 
-        # Label 0
-        if label == 0:
-            coords_no_worm = np.array(
-                [self.windowsize_min_included2, self.windowsize_min_included2],
-                dtype=np.float32
-            )
-            return img_processed, coords_no_worm, label, info
-
         # If Annotation is close to the edge, discard the "Minimum Window Criteria"
         # windowsize_min_included2 = WINDOWSIZE_MIN_INCLUDED2
         # if np.any(coords_new-windowsize_min_included2 < 0) or np.any(coords_new+windowsize_min_included2 >= np.array([nx, ny])):
@@ -313,7 +302,12 @@ class AnnotatedDataLoaderDebug(Dataset):
             imax, jmax = crop_topleft+self.crop_size
             img_processed = img_processed[imin:imax, jmin:jmax]
             coords_new -= crop_topleft[::-1]
-            # Return
+            # No Worm
+            if label == 0:
+                coords_new = np.array(
+                    [self.crop_size//2, self.crop_size//2],
+                    dtype=np.float32
+                )
             if self.verbose:
                 print(f"Image IDX: {idx} Label: {label}, COORD NEW Cropped: {coords_new}")
             return img_processed, coords_new, label, info
@@ -337,7 +331,7 @@ def collate_fn_1d_coords_normalized(data):
     coords = torch.tensor( coords, dtype=torch.float32 )
     return images, coords
 def collate_fn_3d_input(data):
-    images, coords, _ = zip(*data)
+    images, coords, _  = zip(*data)
     coords = np.array(coords)
     images = np.repeat(
         np.array(images)[:,None,:,:], 3, axis=1
@@ -396,187 +390,7 @@ def collate_fn_heatmap_generator(output_image_dim = 100, weighted = True, blur_s
 
 
 # Models
-## Model01
-class Model01(nn.Module):
-    def __init__(
-            self,
-            input_image_shape = (400, 400),
-            output_shape=100**2
-        ):
-        super().__init__()
-        self.input_image_shape = input_image_shape
-        self.input_nx, self.input_ny = self.input_image_shape
-        self.output_shape = output_shape
-        # Convolutions
-        self.conv1_nchannels = 1
-        self.conv1_nconvs = 4
-        self.conv1_convsize = 25
-        self.conv1 = nn.Conv2d(
-            self.conv1_nchannels,
-            self.conv1_nconvs,
-            self.conv1_convsize
-        )
-        self.conv1_activation = nn.ReLU()
-        self.conv1_npooling = 5
-        self.conv1_poolingstride = 2
-        self.conv1_pooling = nn.MaxPool2d(
-            self.conv1_npooling,
-            stride=self.conv1_poolingstride
-        )
-        # TODO: add max_pooling layers
-        # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
-        # Flatten
-        self.flatten = nn.Flatten()
-        # Denses
-        self.linear1 = nn.Linear(
-            in_features=138384,  # TODO calculate this based on parameters above, e.g. self.conv1_convsize, ...
-            out_features=512
-        )
-        self.linear1_activation = nn.ReLU()
-        self.dense = nn.Linear(
-            in_features=512,
-            out_features=self.output_shape
-        )
-        self.to_probability = nn.Sigmoid()
-        return
 
-    def forward(self, x):
-        # Convolutions
-        x = self.conv1_activation(self.conv1(x))
-        x = self.conv1_pooling(x)
-        # Flattern
-        x = self.flatten(x)
-        # Dense
-        x = self.linear1_activation(
-            self.linear1(x)
-        )
-        x = self.dense(x)
-        return self.to_probability(x)
-## Model02
-class Model02(nn.Module):
-    def __init__(
-            self,
-            input_image_shape = (400, 400),
-        ):
-        super().__init__()
-        self.input_image_shape = input_image_shape
-        self.input_nx, self.input_ny = self.input_image_shape
-        # Convolutions
-        self.conv1_nchannels = 1
-        self.conv1_nconvs = 4
-        self.conv1_convsize = 25
-        self.conv1 = nn.Conv2d(
-            self.conv1_nchannels,
-            self.conv1_nconvs,
-            self.conv1_convsize
-        )
-        self.conv1_activation = nn.ReLU()
-        self.conv1_npooling = 5
-        self.conv1_poolingstride = 2
-        self.conv1_pooling = nn.MaxPool2d(
-            self.conv1_npooling,
-            stride=self.conv1_poolingstride
-        )
-        # TODO: add max_pooling layers
-        # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
-        # Flatten
-        self.flatten = nn.Flatten()
-        # Denses
-        self.linear1 = nn.Linear(
-            in_features=138384,  # TODO calculate this based on parameters above, e.g. self.conv1_convsize, ...
-            out_features=512
-        )
-        self.linear1_activation = nn.ReLU()
-        self.dense = nn.Linear(
-            in_features=512,
-            out_features=2
-        )
-        return
-
-    def forward(self, x):
-        # Convolutions
-        x = self.conv1_activation(self.conv1(x))
-        x = self.conv1_pooling(x)
-        # Flattern
-        x = self.flatten(x)
-        # Dense
-        x = self.linear1_activation(
-            self.linear1(x)
-        )
-        x = self.dense(x)
-        return x
-## Model04
-class Model04(nn.Module):
-    def __init__(
-            self,
-            input_image_shape = (400, 400),
-        ):
-        super().__init__()
-        self.input_image_shape = input_image_shape
-        self.input_nx, self.input_ny = self.input_image_shape
-        # Convolutions
-        self.conv1 = nn.Conv2d( 1, 32, 3 )
-        self.conv1_activation = nn.ReLU()
-        self.conv1_pooling = nn.MaxPool2d( 11, 2 )
-
-        self.conv2 = nn.Conv2d( 32, 64, 3 )
-        self.conv2_activation = nn.ReLU()
-        self.conv2_pooling = nn.MaxPool2d( 11, 3 )
-        # TODO: add max_pooling layers
-        # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
-        # Flatten
-        self.flatten = nn.Flatten()
-        # Denses
-        self.linear1 = nn.Linear(
-            in_features=238144,  # TODO calculate this based on parameters above, e.g. self.conv1_convsize, ...
-            out_features=512
-        )
-        self.linear1_activation = nn.Tanh()
-        self.dense = nn.Linear(
-            in_features=512,
-            out_features=2
-        )
-        return
-
-    def forward(self, x):
-        # Convolutions
-        x = self.conv1_activation(self.conv1(x))
-        x = self.conv1_pooling(x)
-
-        x = self.conv2_activation(self.conv2(x))
-        x = self.conv2_pooling(x)
-        # Flattern
-        x = self.flatten(x)
-        # Dense
-        x = self.linear1_activation(
-            self.linear1(x)
-        )
-        x = self.dense(x)
-        return x
-## Model05
-class Model05(nn.Module):
-    def __init__(
-            self,
-            input_image_shape = (400, 400),
-        ):
-        super().__init__()
-        self.input_image_shape = input_image_shape
-        self.input_nx, self.input_ny = self.input_image_shape
-        # Flatten
-        self.flatten = nn.Flatten()
-        # Denses
-        self.dense = nn.Linear(
-            in_features=self.input_nx*self.input_ny,
-            out_features=2
-        )
-        return
-
-    def forward(self, x):
-        # Flattern
-        x = self.flatten(x)
-        # Dense
-        x = self.dense(x)
-        return x
 
 # Trainers
 ## Coordinates Trainer
@@ -716,6 +530,6 @@ class TrainerCoordinates:
                 steps.set_description(
                     'Epoch Steps - Test Loss: {:>7.3f}'.format(loss_value)
                 )
-        # Garbage Collect
-        _ = gc.collect()
+            # Garbage Collect
+            _ = gc.collect()
         return losses_epoch_test
