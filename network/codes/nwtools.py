@@ -1,5 +1,6 @@
 # Modules
 import os
+import gc
 
 import numpy as np
 
@@ -687,6 +688,8 @@ class TrainerCoordinates:
                     },
                     fp_model
                 )
+            # Garbage Collect
+            _ = gc.collect()
         return logs
     # Test
     def test(self, data_loader_test):
@@ -713,4 +716,6 @@ class TrainerCoordinates:
                 steps.set_description(
                     'Epoch Steps - Test Loss: {:>7.3f}'.format(loss_value)
                 )
+        # Garbage Collect
+        _ = gc.collect()
         return losses_epoch_test
