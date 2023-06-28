@@ -14,6 +14,8 @@ import torch.nn.functional as F
 
 import cv2 as cv
 
+import matplotlib.pyplot as plt
+
 # Parameters
 
 # Methods
@@ -75,7 +77,7 @@ class AnnotatedDataLoader(Dataset):
         # Gamma
         gamma = 1.0 + (np.random.rand()-0.5)*2*self.gamma_max_deviation
         img_processed = ( (img_processed/255)**gamma * 255 ).astype(np.uint8)
-        
+
         M_rotation = cv.getRotationMatrix2D((nx//2, ny//2), theta, 1.0)
         img_processed = cv.warpAffine(
             img_processed,
@@ -84,14 +86,22 @@ class AnnotatedDataLoader(Dataset):
             borderValue=255
         )
         coords_new = rotate_xy(M_rotation, x_idx, y_idx).astype(np.int32)
-        
+
+        # Label 0
+        if label == 0:
+            coords_no_worm = np.array(
+                [self.windowsize_min_included2, self.windowsize_min_included2],
+                dtype=np.float32
+            )
+            return img_processed, coords_no_worm, label
+
         # If Annotation is close to the edge, discard the "Minimum Window Criteria"
         # windowsize_min_included2 = WINDOWSIZE_MIN_INCLUDED2
         # if np.any(coords_new-windowsize_min_included2 < 0) or np.any(coords_new+windowsize_min_included2 >= np.array([nx, ny])):
         #     windowsize_min_included2 = 0
         #     if DEBUG:
         #         print(f"Annotation close to edge encountered! Image IDX: {idx} Label: {label}, Coords: {coords_new}")
-        
+
         # TODO add passing conditions and handle missing annotation inside the frame
         for _ in range(3):
             # Annotation Outside after Rotation
@@ -161,14 +171,17 @@ class AnnotatedDataLoader(Dataset):
         print("DEBUG: Attempts to Augment failed!")
         print(f"Image IDX: {idx} Label: {label}, Coords: {coords_new}")
         raise NotImplementedError()
+# DataLoaders
 class AnnotatedDataLoaderDebug(Dataset):
     # Constructor
     def __init__(
             self,
             fp_annotated_data,
+            factor_augmentations = 1,
             windowsize_min_included = 120,
             crop_size = 400,
-            always_same_rows = True,
+            gamma_max_deviation = 0.2,
+            always_same_rows = False,
             verbose = False
         ):
         super().__init__()
@@ -177,11 +190,13 @@ class AnnotatedDataLoaderDebug(Dataset):
         self.images = self._data_file['data']
         self.nrecords, self.ny, self.nx = self.images.shape
         self.coordinates = self._data_file['annotations']
-        self.n = self.nrecords
+        self.factor_augmentations = factor_augmentations
+        self.n = self.nrecords * self.factor_augmentations
         self.windowsize_min_included = windowsize_min_included
         self.windowsize_min_included2 = self.windowsize_min_included//2
         self.crop_size = crop_size
 
+        self.gamma_max_deviation = gamma_max_deviation
         self.always_same_rows = always_same_rows
         self.verbose = verbose
         return
@@ -194,17 +209,20 @@ class AnnotatedDataLoaderDebug(Dataset):
         if self.always_same_rows:
             np.random.seed(i)
         # Parameters
-        idx = i
+        idx = i // self.factor_augmentations
         # Choose randomly from 4 possible rotations: 0, 90, 180, 270 degrees
-        theta = 0.0
+        theta = np.random.choice([ 0, 90, 180, 270 ])
         nx, ny = self.nx, self.ny
         img_processed = self.images[idx]
         y_idx, x_idx = self.coordinates[idx]
         label = 1
-        if y_idx >= ny or x_idx >= nx:
+        if y_idx >= ny or x_idx >= nx or y_idx < 0 or x_idx < 0:
             label = 0
             y_idx, x_idx = ny//2, nx//2
-        # Identity Rotation
+        # Gamma
+        gamma = 1.0 + (np.random.rand()-0.5)*2*self.gamma_max_deviation
+        img_processed = ( (img_processed/255)**gamma * 255 ).astype(np.uint8)
+
         M_rotation = cv.getRotationMatrix2D((nx//2, ny//2), theta, 1.0)
         img_processed = cv.warpAffine(
             img_processed,
@@ -213,14 +231,25 @@ class AnnotatedDataLoaderDebug(Dataset):
             borderValue=255
         )
         coords_new = rotate_xy(M_rotation, x_idx, y_idx).astype(np.int32)
-        
+
+        # Info
+        info = np.array([ idx, x_idx, y_idx, label, theta, gamma ], dtype=np.float32)
+
+        # Label 0
+        if label == 0:
+            coords_no_worm = np.array(
+                [self.windowsize_min_included2, self.windowsize_min_included2],
+                dtype=np.float32
+            )
+            return img_processed, coords_no_worm, label, info
+
         # If Annotation is close to the edge, discard the "Minimum Window Criteria"
         # windowsize_min_included2 = WINDOWSIZE_MIN_INCLUDED2
         # if np.any(coords_new-windowsize_min_included2 < 0) or np.any(coords_new+windowsize_min_included2 >= np.array([nx, ny])):
         #     windowsize_min_included2 = 0
         #     if DEBUG:
         #         print(f"Annotation close to edge encountered! Image IDX: {idx} Label: {label}, Coords: {coords_new}")
-        
+
         # TODO add passing conditions and handle missing annotation inside the frame
         for _ in range(3):
             # Annotation Outside after Rotation
@@ -286,10 +315,11 @@ class AnnotatedDataLoaderDebug(Dataset):
             # Return
             if self.verbose:
                 print(f"Image IDX: {idx} Label: {label}, COORD NEW Cropped: {coords_new}")
-            return img_processed, coords_new, label
+            return img_processed, coords_new, label, info
         print("DEBUG: Attempts to Augment failed!")
         print(f"Image IDX: {idx} Label: {label}, Coords: {coords_new}")
         raise NotImplementedError()
+
 # Collator Functions
 def collate_fn_1d_coords(data):
     images, coords, _ = zip(*data)
@@ -314,6 +344,16 @@ def collate_fn_3d_input(data):
     images_channeled = torch.tensor( images, dtype=torch.float32 )
     coords = torch.tensor( coords, dtype=torch.float32 )
     return images_channeled, coords
+def collate_fn_3d_input_debug(data):
+    images, coords, _, infos = zip(*data)
+    coords = np.array(coords)
+    images = np.repeat(
+        np.array(images)[:,None,:,:], 3, axis=1
+    )
+    images_channeled = torch.tensor( images, dtype=torch.float32 )
+    coords = torch.tensor( coords, dtype=torch.float32 )
+    infos = torch.tensor( np.array(infos), dtype=torch.float32 )
+    return images_channeled, coords, infos
 def collate_fn_heatmap_generator(output_image_dim = 100, weighted = True, blur_size = 11, mask_size = 16):
     def collate_fn_heatmap(data):
         _n = output_image_dim * output_image_dim
@@ -583,7 +623,7 @@ class TrainerCoordinates:
         for i_epoch in range(n_epochs):
             print(f"### Epoch: {i_epoch+1:>3}/{n_epochs:<3}")
             losses_epoch_train = []
-            
+
             # Train
             steps = tqdm(self.data_loader_train, desc=f'Epoch Steps - Train Loss: {0.0:>7.3f}')
             model.train()
@@ -603,7 +643,7 @@ class TrainerCoordinates:
 
                 # Adjust learning weights
                 self.optimizer.step()
-                
+
                 # Log
                 losses_epoch_train.append(loss_value)
                 steps.set_description(
