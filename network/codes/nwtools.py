@@ -35,7 +35,7 @@ class AnnotatedDataLoader(Dataset):
             factor_augmentations = 1,
             windowsize_min_included = 120,
             crop_size = 400,
-            gamma_max_deviation = 0.2,
+            gamma_max_deviation = 0.05,
             always_same_rows = True,
             verbose = False
         ):
@@ -180,7 +180,7 @@ class AnnotatedDataLoaderDebug(Dataset):
             factor_augmentations = 1,
             windowsize_min_included = 120,
             crop_size = 400,
-            gamma_max_deviation = 0.2,
+            gamma_max_deviation = 0.05,
             always_same_rows = False,
             verbose = False
         ):
