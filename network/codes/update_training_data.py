@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
-def update_training_data(src, dest=None):
+def update_training_data(src, dest=None, condition='plate'):
     """
     Updates training data located in 'dest' with annotations found in 'dest'.
 
@@ -28,6 +28,9 @@ def update_training_data(src, dest=None):
         dest:
             - the directory in which the existing 'training_data.h5' can be found.
               if the mentioned file does not exist, it will be created.
+        condition:
+            - specifies the first dataset index. first index is 0 for 'plate' and
+              1000 for 'glass'
 
     The output file, 'training_data.h5' has two groups: 'data' and 'annotations'
     Note: this function does not recognized already added annotations, therefore calling
@@ -65,7 +68,21 @@ def update_training_data(src, dest=None):
         data = dest_file["data"]
         annotations = dest_file["annotations"]
         dataset_index = dest_file["index"]
-        index = dataset_index[-1] + 1
+        indices = dataset_index[:]
+
+        if condition == "plate":
+            plate_indices = indices[indices<1000]
+            if len(plate_indices) == 0:
+                index = 0
+            else:
+                index = np.max(plate_indices) + 1
+        else:
+            glass_indices = indices[indices>=1000]
+            if len(glass_indices) == 0:
+                index = 1000
+            else:
+                index = np.max(glass_indices) + 1
+
     else:
         dest_file = h5py.File(os.path.join(dest, 'training_data.h5'), 'w-')
         group = dest_file["/"]
@@ -96,7 +113,7 @@ def update_training_data(src, dest=None):
             compression_opts=None,
             maxshape=(None, 1)
         )
-        index = 0
+        index = 0 if condition == 'plate' else 1000
         n_datapoints = 0
         
 
