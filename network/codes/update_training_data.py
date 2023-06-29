@@ -1,5 +1,5 @@
 import os
-import sys
+import json
 from math import floor
 
 import h5py
@@ -33,11 +33,19 @@ def update_training_data(src, dest=None, condition='plate'):
               1000 for 'glass'
 
     The output file, 'training_data.h5' has two groups: 'data' and 'annotations'
-    Note: this function does not recognized already added annotations, therefore calling
-    this function on a file twice, will create two copies of the annotations in the output.
     """
     if dest is None:
         dest = r'V:\Mahdi\OpenAutoScope2.0\data\training_data'
+    
+    if os.path.exists(os.path.join(dest, 'dataset_paths.json')):
+        with open(os.path.join(dest, 'dataset_paths.json'), 'r') as f:
+            appended_datasets = json.load(f)
+    else:
+        appended_datasets = {}
+
+    appended_datasets_paths = list(appended_datasets.values())
+    if src in appended_datasets_paths:
+        return
 
     try:
         src_file = h5py.File(os.path.join(src, 'data.h5'), 'r')
@@ -136,6 +144,12 @@ def update_training_data(src, dest=None, condition='plate'):
                     annotations[n_datapoints-1, :] = [y, x]
     else:
         print("Error: Annotations file is empty.")
+
+    appended_datasets[int(index)] = src
+    json_appended_datasets = json.dumps(appended_datasets, indent=4)
+    with open(os.path.join(dest, 'dataset_paths.json'), 'w') as f:
+        f.write(json_appended_datasets)
+
 
     src_file.close()
     annot_file.close()
