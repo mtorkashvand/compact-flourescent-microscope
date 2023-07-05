@@ -46,6 +46,7 @@ class WormTrackerHub(Hub):
         self.framerate=framerate
 
     def shutdown(self):
+        self._detector_pharynx_shutdown()
         self._displayer_shutdown()
         self._writer_shutdown()
         self._flir_camera_shutdown()
@@ -92,6 +93,9 @@ class WormTrackerHub(Hub):
         self.send("displayer_behavior shutdown")
         self.send("displayer_gcamp shutdown")
         self.send("displayer_debug shutdown")
+    
+    def _detector_pharynx_shutdown(self):
+        self.send("detector_pharynx shutdown")
 
     def _data_hub_set_shape(self, z, y, x):
         # TODO: separate functions for cameras?

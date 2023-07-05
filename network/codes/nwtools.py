@@ -432,6 +432,10 @@ class TrainerCoordinates:
         return
     # Train
     def train(self, n_epochs, n_epochs_checkpoint = 10):
+        # Best Model Parameters
+        loss_validation_best = None
+        fp_model_best = os.path.join( self.fp_checkpoints, "best.pt" )
+
         model = self.model.to(self.device)
         loss_fn = self.loss_fn
         logs = []
@@ -484,10 +488,24 @@ class TrainerCoordinates:
                     steps.set_description(
                         'Epoch Steps - Validation Loss: {:>7.3f}'.format(loss_value)
                     )
+            loss_train_mean = np.mean(losses_epoch_train)
+            loss_validation_mean = np.mean(losses_epoch_validation)
             logs.append([
-                np.mean(losses_epoch_train), np.mean(losses_epoch_validation),
+                loss_train_mean, loss_validation_mean,
                 losses_epoch_train, losses_epoch_validation
             ])
+            # Best Model
+            if loss_validation_best is None or loss_validation_mean < loss_validation_best:
+                loss_validation_best = loss_validation_mean
+                torch.save({
+                    'epoch': i_epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'loss_train': loss_train_mean,
+                    'loss_validation': loss_validation_best,
+                    },
+                    fp_model_best
+                )
             # Save Model
             if (i_epoch+1)%n_epochs_checkpoint == 0:
                 if not os.path.exists(self.fp_checkpoints):
@@ -497,8 +515,8 @@ class TrainerCoordinates:
                     'epoch': i_epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
-                    'loss_train': np.mean(losses_epoch_train),
-                    'loss_validation': np.mean(losses_epoch_validation),
+                    'loss_train': loss_train_mean,
+                    'loss_validation': loss_validation_mean,
                     },
                     fp_model
                 )
