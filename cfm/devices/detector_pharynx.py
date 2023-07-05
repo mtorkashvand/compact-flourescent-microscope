@@ -44,9 +44,10 @@ class DetectorPharynx():
                  to_forwarder: Tuple[str, int],
                  input_commands: Tuple[str, int]):
 
+
         self.subscriber_input_image = ArraySubscriber(
-            host=input_image[1],
-            port=input_image[0],
+            host=input_image[0],
+            port=input_image[1],
             bound=input_image[2],
             shape=(512,512),
             datatype=np.uint8
@@ -68,7 +69,9 @@ class DetectorPharynx():
         self.poller.register(self.subscriber_input_image.socket)
         self.poller.register(self.subscriber_commands.socket)
 
-        self.ort_session = onnxruntime.InferenceSession("model_detection_pharynx.onnx")
+        self.ort_session = onnxruntime.InferenceSession(
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
         self.running = True
         
 

@@ -115,12 +115,7 @@ class DualDisplayer:
         image_r_warped = self.warp_r()
         
         if combine:
-            image_g_80q = np.quantile(self.image_g, 0.8)
-            image_g_max = self.image_g.max()
-            _gcamp_overlay = self.image_g.astype(np.float32)
-            _gcamp_overlay = ( _gcamp_overlay - image_g_80q ) * image_g_max/(2*(image_g_max - image_g_80q))
-            _gcamp_overlay = np.clip( _gcamp_overlay, 0, 255 ).astype(np.uint8)
             self.image[..., :] = (image_r_warped / 2).astype(np.uint8)[..., None]
-            self.image[..., 1] += _gcamp_overlay
+            self.image[..., 1] += ( self.image_g / 2 ).astype(np.uint8)
             return image_r_warped, self.image_g, self.image
         return image_r_warped, self.image_g, None

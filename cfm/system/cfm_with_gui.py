@@ -235,14 +235,14 @@ class CFMwithGUI:
                             f"--interpolation_tracking={interpolation_tracking}",
                             f"--name=tracker_gcamp",
                             f"--data_out_debug={tracker_out_debug}",
-                            f"--tracker_out_image={tracker_out_image}",
+                            f"--tracker_out_image={tracker_out_image+2000}",
                         ]))
             ## Detector Pharynx
-            self.jobs.append(Popen(["detector_pharynx",
-                            f"--input_image=L{tracker_out_image}",
-                            f"--to_forwarder=L{forwarder_in}",
-                            f"--input_commands=L{forwarder_out}",
-                            ]))
+            # self.jobs.append(Popen(["detector_pharynx",
+            #                 f"--input_image=L{tracker_out_image}",
+            #                 f"--to_forwarder=L{forwarder_in}",
+            #                 f"--input_commands=L{forwarder_out}",
+            #                 ]))
 
             self.jobs.append(Popen(["cfm_teensy_commands",
                             f"--inbound=L{forwarder_out}",

@@ -33,7 +33,6 @@ Options:
 
 # Modules
 from __future__ import annotations
-import pstats
 import time
 import json
 from typing import Tuple
@@ -42,6 +41,7 @@ from typing import Tuple
 import zmq
 import cv2 as cv
 import numpy as np
+import onnxruntime
 from docopt import docopt
 
 from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
@@ -271,9 +271,7 @@ class TrackerDevice():
         ## Tracker Class
         # self.xytracker = XYTrackerThreshold(tracker = self)
         self.xytracker = XYTrackerRatio(tracker = self)
-        self.y_worm = self.shape[1]//2
-        self.x_worm = self.shape[0]//2
-
+        
 
         np.seterr(divide = 'ignore')
         self.status = {}
@@ -286,6 +284,8 @@ class TrackerDevice():
         (self.dtype, _, self.shape) = array_props_from_string(fmt)  # UINT8_YX_512_512 -> dtype = uint8 , shape = (512,512)
         self.out = np.zeros(self.shape, dtype=self.dtype)
         self.data = np.zeros(self.shape)
+        self.y_worm = self.shape[1]//2
+        self.x_worm = self.shape[0]//2
 
         ## Z Tracking
         self.shrp_idx = 0
@@ -300,6 +300,52 @@ class TrackerDevice():
 
         self.tracking = False
         self.running = True
+
+        self.ort_session_L1_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L1_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L2_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L2_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L3_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L3_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L4_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L4_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_YA_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_YA_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L1_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L1_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L2_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L2_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L3_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L3_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L4_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L4_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_YA_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_YA_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+
+        # self.ort_session = self.ort_session_YA_plate
+        self.set_ort()
+        self.magnification = "10x"
+        
 
         self.command_publisher = Publisher(
             host=commands_out[0],
@@ -319,13 +365,6 @@ class TrackerDevice():
             bound=self.data_out_debug[2],
             shape=self.shape,
             datatype=self.dtype) if self.data_out_debug is not None and self.name != "tracker_gcamp" else None
-        
-        self.data_publisher_detector = TimestampedPublisher(
-            host=self.data_out_detector[0],
-            port=self.data_out_detector[1],
-            bound=self.data_out_detector[2],
-            shape=self.shape,
-            datatype=self.dtype) if self.data_out_detector is not None and self.name != "tracker_gcamp" else None
 
         self.command_subscriber = ObjectSubscriber(
             obj=self,
@@ -358,6 +397,20 @@ class TrackerDevice():
         self.idx_detector_send = 0
         self.idx_detector_receive = 0
 
+    def detect_pharynx(self, img):
+        img_cropped = img[56:-56,56:-56]
+        batch_1_400_400 = {
+            'input': np.repeat(
+                img_cropped[None, None, :, :], 3, 1
+            ).astype(np.float32)
+        }
+        ort_outs = self.ort_session.run( None, batch_1_400_400 )
+        self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
+        # self.x_worm, self.y_worm = 50, 50
+        # self.publisher_to_forwarder.send(f"tracker_behavior set_worm_xy {x} {y}")
+        # return
+    
+
     def set_point(self, i):
         self.command_publisher.send(f"teensy_commands get_pos {self.name} {i}")
         self.send_log(f"get_pos({self.name},{i}) request sent")
@@ -383,6 +436,11 @@ class TrackerDevice():
                 "intercept": str(self.d0),
             })
 
+    def set_ort(self, stage='YA', condition='plate'):
+        self.ort_session = self.__getattribute__("ort_session_{}_{}".format(stage, condition))
+
+    def set_magnification(self, magnification="10x"):
+        self.magnification = magnification.lower()
 
     def estimate_vz_by_interpolation(self):
         if not self.isN:
@@ -523,29 +581,29 @@ class TrackerDevice():
 
         return img_annotated
     
-    def set_worm_xy(self, x, y):
-        self.x_worm = int(float(x))
-        self.y_worm = int(float(y))
-        self.idx_detector_receive += 1
-        print(f"<Tracker-{self.name}> {self.idx_detector_receive:>9} {time.time()} worm xy received: ({self.x_worm}, {self.y_worm})")
-        return
+    # def set_worm_xy(self, x, y):
+    #     self.x_worm = int(float(x))
+    #     self.y_worm = int(float(y))
+    #     self.idx_detector_receive += 1
+    #     print(f"<Tracker-{self.name}> {self.idx_detector_receive:>9} {time.time()} worm xy received: ({self.x_worm}, {self.y_worm})")
+    #     return
     
     def detect_using_Detector(self, img):
 
         self.found_trackedworm = True
-        self.data_publisher_detector.send(img)
+        # self.data_publisher_detector.send(img)
         self.idx_detector_send += 1
-        print(f"<Tracker-{self.name}> {self.idx_detector_send:>9} {time.time()} worm image sent")
+        # print(f"<Tracker-{self.name}> {self.idx_detector_send:>9} {time.time()} worm image sent")
         self.vz = None
 
         # Visualize Informations
         img_annotated = img.copy()
-        img_annotated = cv.circle(img_annotated, (self.x_worm,self.y_worm), radius=10, color=(0, 0, 255), thickness=2)
-        img_annotated = cv.circle(img_annotated, (self.y_worm,self.x_worm), radius=10, color=(255, 0, 0), thickness=2)
+        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=10, color=(0, 0, 255), thickness=2)
+        img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=(255, 0, 0), thickness=2)
 
-        self.y_worm = 0.05*(self.shape[1]//2) + 0.95 * self.y_worm
-        self.x_worm = 0.05*(self.shape[0]//2) + 0.95 * self.x_worm
-        img_annotated = cv.circle(img_annotated, (self.x_worm,self.y_worm), radius=10, color=(0, 0, 255), thickness=2)
+        # self.y_worm = 0.05*(self.shape[1]//2) + 0.95 * self.y_worm
+        # self.x_worm = 0.05*(self.shape[0]//2) + 0.95 * self.x_worm
+        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=3, color=(255, 0, 0), thickness=2)
 
         if self.data_publisher_debug is not None:
             img_debug = img_annotated
@@ -572,7 +630,10 @@ class TrackerDevice():
 
         # Find Worm
         img = self.data
-        img_annotated = self.detect_using_XY_tracker(img)
+
+        # img_annotated = self.detect_using_XY_tracker(img)
+        self.detect_pharynx(img)
+        img_annotated = self.detect_using_Detector(img)
         # Behavior Displayer
         self.data_publisher.send(img_annotated)
 
