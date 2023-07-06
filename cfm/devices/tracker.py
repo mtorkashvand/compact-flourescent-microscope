@@ -27,11 +27,12 @@ Options:
                                             [default: False]
     --data_out_debug=HOST:PORT                Host and Port for the outgoing debug image.
                                             [default: localhost:5009]
+    --tracker_out_image=HOST:PORT       Host and Port for the outgoing image for detection purpose.
+                                            [default: localhost:5010]
 """
 
 # Modules
 from __future__ import annotations
-import pstats
 import time
 import json
 from typing import Tuple
@@ -40,6 +41,7 @@ from typing import Tuple
 import zmq
 import cv2 as cv
 import numpy as np
+import onnxruntime
 from docopt import docopt
 
 from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
@@ -237,7 +239,8 @@ class TrackerDevice():
             fmt: str,
             interpolation_tracking:bool,
             name: str,
-            data_out_debug: Tuple[str, int] = None,):
+            data_out_debug: Tuple[str, int] = None,
+            tracker_out_image: Tuple[str, int] = None,):
         
         # Tracking Parameters
         ## Camera Related
@@ -268,18 +271,21 @@ class TrackerDevice():
         ## Tracker Class
         # self.xytracker = XYTrackerThreshold(tracker = self)
         self.xytracker = XYTrackerRatio(tracker = self)
-
+        
 
         np.seterr(divide = 'ignore')
         self.status = {}
         self.data_out = data_out
         self.data_out_debug = data_out_debug
+        self.data_out_detector = tracker_out_image
         self.data_in = data_in
         self.poller = zmq.Poller()
         self.name = name
         (self.dtype, _, self.shape) = array_props_from_string(fmt)  # UINT8_YX_512_512 -> dtype = uint8 , shape = (512,512)
         self.out = np.zeros(self.shape, dtype=self.dtype)
         self.data = np.zeros(self.shape)
+        self.y_worm = self.shape[1]//2
+        self.x_worm = self.shape[0]//2
 
         ## Z Tracking
         self.shrp_idx = 0
@@ -294,6 +300,52 @@ class TrackerDevice():
 
         self.tracking = False
         self.running = True
+
+        self.ort_session_L1_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L1_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L2_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L2_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L3_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L3_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L4_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L4_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_YA_glass = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_YA_glass_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L1_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L1_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L2_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L2_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L3_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L3_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_L4_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_L4_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+        self.ort_session_YA_plate = onnxruntime.InferenceSession(
+            # r"C:\src\wormtracker\model_YA_plate_detection_pharynx.onnx"
+            r"C:\src\wormtracker\model_detection_pharynx.onnx"
+        )
+
+        # self.ort_session = self.ort_session_YA_plate
+        self.set_ort()
+        self.magnification = "10x"
+        
 
         self.command_publisher = Publisher(
             host=commands_out[0],
@@ -342,6 +394,22 @@ class TrackerDevice():
             self.print(f"\n{type(self.interpolation_tracking)}\n")
             self.print(f"\n{self.interpolation_tracking}\n")
             self.print("\nTRACKING BY INTERPOLATION\n")
+        self.idx_detector_send = 0
+        self.idx_detector_receive = 0
+
+    def detect_pharynx(self, img):
+        img_cropped = img[56:-56,56:-56]
+        batch_1_400_400 = {
+            'input': np.repeat(
+                img_cropped[None, None, :, :], 3, 1
+            ).astype(np.float32)
+        }
+        ort_outs = self.ort_session.run( None, batch_1_400_400 )
+        self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
+        # self.x_worm, self.y_worm = 50, 50
+        # self.publisher_to_forwarder.send(f"tracker_behavior set_worm_xy {x} {y}")
+        # return
+    
 
     def set_point(self, i):
         self.command_publisher.send(f"teensy_commands get_pos {self.name} {i}")
@@ -368,6 +436,11 @@ class TrackerDevice():
                 "intercept": str(self.d0),
             })
 
+    def set_ort(self, stage='YA', condition='plate'):
+        self.ort_session = self.__getattribute__("ort_session_{}_{}".format(stage, condition))
+
+    def set_magnification(self, magnification="10x"):
+        self.magnification = magnification.lower()
 
     def estimate_vz_by_interpolation(self):
         if not self.isN:
@@ -388,25 +461,7 @@ class TrackerDevice():
         self.curr_point[:] = [x, y, z]
         self.send_log(f"received position ({x},{y},{z})")
 
-    def process(self):
-        """This processes the incoming images and sends move commands to zaber."""
-        # Get Image Data
-        msg = self.data_subscriber.get_last()
-        if msg is not None:
-            self.data = msg[1]
-        
-        # Base Cases
-        ## None Message
-        if msg is None:
-            self.print("received message is NONE")
-            return
-        ## DEBUG GCaMP
-        if self.name == "tracker_gcamp":
-            self.data_publisher.send(self.data)
-            return
-
-        # Find Worm
-        img = self.data
+    def detect_using_XY_tracker(self, img):
         img_size = img.size
         nx, ny = img.shape[:2]
         
@@ -444,7 +499,7 @@ class TrackerDevice():
                     centroid
                 ])
         ## Select Worm from Candidates
-        found_trackedworm = False
+        self.found_trackedworm = False
         img_mask_trackedworm = None
         idx_closest = None
         _d_center_closest = None
@@ -464,7 +519,7 @@ class TrackerDevice():
                     is_close_enough = is_close_enough and (_size_lower <= _size <= _size_upper)
                 # If Close Enough
                 if is_close_enough:
-                    found_trackedworm = True
+                    self.found_trackedworm = True
                     if _d_center_closest is None or _d_center < _d_center_closest:
                         idx_closest = idx
                         _d_center_closest = _d_center
@@ -478,6 +533,7 @@ class TrackerDevice():
             # self.print(f"Number of candidates: {len(candidates_info)}")
             # self.print(str(candidates_info))
             pass
+
         # Visualize Informations
         img_annotated = img.copy()
         # for idx, (mask, _) in enumerate(candidates_info):
@@ -491,18 +547,99 @@ class TrackerDevice():
         #     thickness = 10 if idx == idx_closest else 2
         #     linetype = 1
         #     cv.rectangle(img_annotated, p1, p2, color, thickness, linetype)
-        
 
-        # DEBUG
-        # img_annotated = img_mask_brights.astype(np.uint8) * img
-        self.data_publisher.send(img_annotated)
         if self.data_publisher_debug is not None:
             img_debug = img_mask_objects.astype(np.uint8)*255
             self.data_publisher_debug.send(img_debug)
+        
+
+        # Worm Mask
+        if self.found_trackedworm:
+            ## Extend Worm Boundary
+            img_mask_trackedworm_blurred = cv.blur(
+                img_mask_trackedworm.astype(np.float32),
+                (self.MASK_KERNEL_BLUR, self.MASK_KERNEL_BLUR)
+            ) > 1e-4
+            xs, ys = np.where(img_mask_trackedworm_blurred)
+            x_min, x_max = minmax(xs)
+            y_min, y_max = minmax(ys)
+            self.img_trackedworm_cropped = img[
+                x_min:(x_max+1),
+                y_min:(y_max+1)
+            ]
+            self.x_worm = (x_min + x_max)//2
+            self.y_worm = (y_min + y_max)//2
+
+            # Z Calculations
+            self.shrp_hist[self.shrp_idx] = self.calc_img_sharpness(
+                self.img_trackedworm_cropped
+            )
+        else:
+            self.x_worm, self.y_worm = None, None
+            self.img_trackedworm_cropped = None
+            self.vz = None
+
+        return img_annotated
+    
+    # def set_worm_xy(self, x, y):
+    #     self.x_worm = int(float(x))
+    #     self.y_worm = int(float(y))
+    #     self.idx_detector_receive += 1
+    #     print(f"<Tracker-{self.name}> {self.idx_detector_receive:>9} {time.time()} worm xy received: ({self.x_worm}, {self.y_worm})")
+    #     return
+    
+    def detect_using_Detector(self, img):
+
+        self.found_trackedworm = True
+        # self.data_publisher_detector.send(img)
+        self.idx_detector_send += 1
+        # print(f"<Tracker-{self.name}> {self.idx_detector_send:>9} {time.time()} worm image sent")
+        self.vz = None
+
+        # Visualize Informations
+        img_annotated = img.copy()
+        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=10, color=(0, 0, 255), thickness=2)
+        img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=(255, 0, 0), thickness=2)
+
+        # self.y_worm = 0.05*(self.shape[1]//2) + 0.95 * self.y_worm
+        # self.x_worm = 0.05*(self.shape[0]//2) + 0.95 * self.x_worm
+        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=3, color=(255, 0, 0), thickness=2)
+
+        if self.data_publisher_debug is not None:
+            img_debug = img_annotated
+            self.data_publisher_debug.send(img_debug)
+
+        return img_annotated
+
+    def process(self):
+        """This processes the incoming images and sends move commands to zaber."""
+        # Get Image Data
+        msg = self.data_subscriber.get_last()
+        if msg is not None:
+            self.data = msg[1]
+        
+        # Base Cases
+        ## None Message
+        if msg is None:
+            self.print("received message is NONE")
+            return
+        ## DEBUG GCaMP
+        if self.name == "tracker_gcamp":
+            self.data_publisher.send(self.data)
+            return
+
+        # Find Worm
+        img = self.data
+
+        # img_annotated = self.detect_using_XY_tracker(img)
+        self.detect_pharynx(img)
+        img_annotated = self.detect_using_Detector(img)
+        # Behavior Displayer
+        self.data_publisher.send(img_annotated)
 
 
         # If no worm and tracking, stop moving to avoid collision
-        if self.tracking and not found_trackedworm:
+        if self.tracking and not self.found_trackedworm:
             # TODO why this happens that worm seems to be missing?!
             self.missing_worm_idx += 1
             # Interpolation Method
@@ -519,39 +656,21 @@ class TrackerDevice():
                 if not self.interpolation_tracking:
                     self.print("TRACKING AND NO WORM!")
             return
-        elif not found_trackedworm:
+        elif not self.found_trackedworm:
             return
-        elif self.tracking and found_trackedworm:
+        elif self.tracking and self.found_trackedworm:
             self.missing_worm_idx = 0
 
 
-        # Worm Mask
-        ## Extend Worm Boundary
-        img_mask_trackedworm_blurred = cv.blur(
-            img_mask_trackedworm.astype(np.float32),
-            (self.MASK_KERNEL_BLUR, self.MASK_KERNEL_BLUR)
-        ) > 1e-4
-        xs, ys = np.where(img_mask_trackedworm_blurred)
-        x_min, x_max = minmax(xs)
-        y_min, y_max = minmax(ys)
-        img_trackedworm_cropped = img[
-            x_min:(x_max+1),
-            y_min:(y_max+1)
-        ]
-
         # XY Calculations
-        self.Dx = (y_min + y_max)//2 - self.shape[1]//2
-        self.Dy = (x_min + x_max)//2 - self.shape[0]//2
+        self.Dx = self.y_worm - self.shape[1]//2
+        self.Dy = self.x_worm - self.shape[0]//2
+
+        # PID ???
         ## Velocities XY
-        # self.vx = 3*np.sign(self.Dx) * int(((np.abs(self.Dx) * 2 / self.shape[1]) ** 0.7) * self.shape[1] / 2)
-        # self.vy = 3*np.sign(self.Dy) * int(((np.abs(self.Dy) * 2 / self.shape[0]) ** 0.7) * self.shape[0] / 2)
         self.vx = 3*np.sign(self.Dx) * int(((np.abs(self.Dx) * 2 / self.shape[1]) ** 0.7) * self.shape[1] / 4)
         self.vy = 3*np.sign(self.Dy) * int(((np.abs(self.Dy) * 2 / self.shape[0]) ** 0.7) * self.shape[0] / 4)
 
-        # Z Calculations
-        self.shrp_hist[self.shrp_idx] = self.calc_img_sharpness(
-            img_trackedworm_cropped
-        )
         ## Velocity Z
         if self.interpolation_tracking:
             self.estimate_vz_by_interpolation()
@@ -824,7 +943,7 @@ class TrackerDevice():
             shrp_old = np.nanmean(self.shrp_hist[:_n])
             shrp_new = np.nanmean(self.shrp_hist[_n:])
             # Stop or Move
-            if np.isnan(shrp_old) or np.isnan(shrp_new):
+            if np.isnan(shrp_old) or np.isnan(shrp_new) or self.vz is None:
                 self.vz = 0
             elif self.vz == 0:
                 self.vz = self.VZ_MAX

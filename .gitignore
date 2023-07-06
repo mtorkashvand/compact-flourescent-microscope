@@ -5,3 +5,10 @@ __pycache__/
 
 # Icons
 cfm/icons/icons.py
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+*.onnx
+*.zip
