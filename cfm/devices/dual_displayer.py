@@ -5,6 +5,7 @@
 
 from typing import Tuple
 import PySimpleGUI as sg
+import time
 
 import cv2 as cv  # install specific version: pip install opencv-python==4.5.2.54
 import zmq
@@ -76,10 +77,6 @@ class DualDisplayer:
         self.poller.register(self.subscriber_r.socket, zmq.POLLIN)
         self.poller.register(self.subscriber_g.socket, zmq.POLLIN)
 
-    #  TODO: add methods to load peviously save warp matrix or to update it
-    def warp_r(self):
-        # return cv.warpAffine(self.image_r, self.warp_matrix, *self.shape[::-1])
-        return self.image_r
 
     def get_frame(self, combine=False):
         """
@@ -111,11 +108,11 @@ class DualDisplayer:
                 msg_g = self.subscriber_g.get_last()
                 if msg_g is not None:
                     self.image_g = msg_g[1]
-
-        image_r_warped = self.warp_r()
         
         if combine:
-            self.image[..., :] = (image_r_warped / 2).astype(np.uint8)[..., None]
-            self.image[..., 1] += ( self.image_g / 2 ).astype(np.uint8)
-            return image_r_warped, self.image_g, self.image
-        return image_r_warped, self.image_g, None
+            _q = np.quantile(self.image_g, 0.7)
+            _max_g = np.max( self.image_g )
+            self.image[...,:]  = (self.image_r / 2).astype(np.uint8)[...,None]
+            self.image[...,1] += np.clip((self.image_g.astype(np.float32) - _q ) * _max_g / 2 / (_max_g - _q), 0, 255).astype(np.uint8)
+            return self.image_r, self.image_g, self.image
+        return self.image_r, self.image_g, None
