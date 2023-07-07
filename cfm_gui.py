@@ -31,7 +31,8 @@ from cfm.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
     ZInterpolationTracking, ToggleRecording, ToggleTracking,
-    XYGamePad, ZGamePad, FolderBrowser
+    XYGamePad, ZGamePad, FolderBrowser, Combos,
+    InputwithIncrementsforZOffset
 )
 
 from cfm.icons.icons import *
@@ -212,7 +213,7 @@ ui_led_ir = LEDIR(
 elements.append(ui_led_ir)
 
 ui_exposure_gfp = ExposureCompound(
-    text='Exposure Time',
+    text='GFP Exposure Time',
     key='exposure_gcamp',
     icon=ICON_EXPOSURE,
     icon_size=ICON_SIZE,
@@ -222,7 +223,7 @@ ui_exposure_gfp = ExposureCompound(
 elements.append(ui_exposure_gfp)
 
 ui_exposure_behavior = ExposureCompound(
-    text='Exposure Time',
+    text='IR Exposure Time',
     key='exposure_behavior',
     icon=ICON_EXPOSURE,
     icon_size=ICON_SIZE,
@@ -242,6 +243,11 @@ elements.append(ui_framerate)
 ui_interpolation_tracking = ZInterpolationTracking()
 elements.append(ui_interpolation_tracking)
 
+ui_tracking_model = Combos(text="Sample Stage/Condition", key="tracking_model")
+elements.append(ui_tracking_model)
+
+ui_tracker_z_offset = InputwithIncrementsforZOffset(text= "Tracker Z Offset", key="z_offset", default_value=0)
+elements.append(ui_tracker_z_offset)
 
 ui_xygamepad = XYGamePad(
     icon_xleft=ICON_X_NEG, icon_xright=ICON_X_POS,
@@ -329,7 +335,7 @@ layout = [
     ],[
         sg.HorizontalSeparator(),
     ],[
-        *ui_interpolation_tracking.elements,
+        *ui_interpolation_tracking.elements, sg.VSeparator(), *ui_tracker_z_offset.elements, sg.VSeparator(), *ui_tracking_model.elements
     ],[
         sg.HorizontalSeparator(),
     ],[
@@ -339,7 +345,7 @@ layout = [
     ],[
         sg.HorizontalSeparator(),
     ],[
-        sg.Button('Quit')
+        sg.Button('Quit', button_color=BUTTON_COLOR)
     ]
 ]
 

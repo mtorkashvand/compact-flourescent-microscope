@@ -203,11 +203,11 @@ class CFMwithGUI:
                             f"--video_name=flircamera_gcamp",
                             f"--name=writer_gcamp"]))
             ## Debug Display
-            self.jobs.append(Popen(["cfm_displayer",
-                            f"--inbound=L{tracker_out_debug}",
-                            f"--format={format}",
-                            f"--commands=L{forwarder_out}",
-                            f"--name=displayer_debug"]))
+            # self.jobs.append(Popen(["cfm_displayer",
+            #                 f"--inbound=L{tracker_out_debug}",
+            #                 f"--format={format}",
+            #                 f"--commands=L{forwarder_out}",
+            #                 f"--name=displayer_debug"]))
             # Logger
             self.jobs.append(Popen(["cfm_logger",
                             f"--inbound={forwarder_out}",

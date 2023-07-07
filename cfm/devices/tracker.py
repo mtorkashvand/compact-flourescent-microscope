@@ -320,12 +320,12 @@ class TrackerDevice():
             shape=self.shape,
             datatype=self.dtype)
         
-        self.data_publisher_debug = TimestampedPublisher(
-            host=self.data_out_debug[0],
-            port=self.data_out_debug[1],
-            bound=self.data_out_debug[2],
-            shape=self.shape,
-            datatype=self.dtype) if self.data_out_debug is not None and self.name != "tracker_gcamp" else None
+        # self.data_publisher_debug = TimestampedPublisher(
+        #     host=self.data_out_debug[0],
+        #     port=self.data_out_debug[1],
+        #     bound=self.data_out_debug[2],
+        #     shape=self.shape,
+        #     datatype=self.dtype) if self.data_out_debug is not None and self.name != "tracker_gcamp" else None
 
         self.command_subscriber = ObjectSubscriber(
             obj=self,
@@ -496,9 +496,9 @@ class TrackerDevice():
         # Visualize Informations
         img_annotated = img.copy()
 
-        if self.data_publisher_debug is not None:
-            img_debug = img_mask_objects.astype(np.uint8)*255
-            self.data_publisher_debug.send(img_debug)
+        # if self.data_publisher_debug is not None:
+        #     img_debug = img_mask_objects.astype(np.uint8)*255
+        #     self.data_publisher_debug.send(img_debug)
         
 
         # Worm Mask
@@ -540,9 +540,9 @@ class TrackerDevice():
         img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=255, thickness=2)
         img_annotated = cv.circle(img_annotated, (256, 256), radius=2, color=255, thickness=2)  # Center of image
 
-        if self.data_publisher_debug is not None:
-            img_debug = img_annotated
-            self.data_publisher_debug.send(img_debug)
+        # if self.data_publisher_debug is not None:
+        #     img_debug = img_annotated
+        #     self.data_publisher_debug.send(img_debug)
 
         return img_annotated
 
@@ -678,8 +678,8 @@ class TrackerDevice():
 
         self.data_subscriber.set_shape(self.shape)
         self.data_publisher.set_shape(self.shape)
-        if self.data_publisher_debug is not None and self.name != "tracker_gcamp" :
-            self.data_publisher_debug.set_shape(self.shape)
+        # if self.data_publisher_debug is not None and self.name != "tracker_gcamp" :
+        #     self.data_publisher_debug.set_shape(self.shape)
 
         self.poller.register(self.data_subscriber.socket, zmq.POLLIN)
         self.publish_status()

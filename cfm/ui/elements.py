@@ -394,12 +394,12 @@ class ExposureCompound(AbstractElement):
         self.button = sg.Button(
             image_data=self.icon,
             image_size=self.icon_size,
-            disabled=True,
+            # disabled=True,
             enable_events=False,
             button_color=(sg.theme_background_color(),sg.theme_background_color())
         )
         self.text_element = sg.Text(
-            text=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})', s=29,
+            text=self.text + f'(min:{self.bounds[0]}, max:{self.bounds[1]})', s=30,
             background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
@@ -470,11 +470,11 @@ class FramerateCompound(AbstractElement):
         self.button = sg.Button(
             image_data=icon,
             image_size=icon_size,
-            disabled=True,
+            # disabled=True,
             enable_events=False
         )
         self.text = sg.Text(
-            text=text, s=29,
+            text=text, s=30,
             background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
@@ -537,9 +537,9 @@ class InputWithIncrements(AbstractElement):
         self.elements = [
             sg.Text(self.text, background_color = BACKGROUND_COLOR)
         ] + [
-            sg.Button(button_text=f"{inc}",key=event, s=(3, 1)) for event, inc in self.key_to_offset.items() if inc < 0
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc < 0
         ] + [ self.input ] + [
-            sg.Button(button_text=f"{inc}",key=event, s=(3, 1)) for event, inc in self.key_to_offset.items() if inc > 0
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc > 0
         ]
         _, self.camera_name, self.offset_direction = self.key.split('_')
         self.key_offset_other = 'offset_{}_{}'.format(
@@ -589,6 +589,75 @@ class PortsMenu(AbstractElement):
     # Constructor
     def __init__(self) -> None:
         return
+
+
+class InputwithIncrementsforZOffset(AbstractElement):
+    # Constructor
+    def __init__(self, text:str, key: str, default_value: int, increments: List[int] = [-1, 1], bounds: List[int] = [-1024, 1024], type_caster=int) -> None:
+        super().__init__()
+        self.text = text
+        self.default_value = default_value
+        self.bounds = bounds
+        self.bound_lower = min(self.bounds)
+        self.bound_upper = max(self.bounds)
+        self.key = key
+        self.increments =  increments
+        self.type_caster = type_caster
+        self.key_to_offset = {
+            f"{key}--{inc}": inc for inc in self.increments
+        }
+        self.events = set(self.key_to_offset)
+        self.events.add(self.key)
+        self.input = sg.Input(default_text=self.default_value, key=key, size=4)
+        self.elements = [
+            sg.Text(self.text, background_color = BACKGROUND_COLOR)
+        ] + [
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc < 0
+        ] + [ self.input ] + [
+            sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc > 0
+        ]
+        return
+
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key:
+            pass
+        return
+
+    def add_values(self, values):
+        values[self.key] = self.type_caster(
+            self.input.get()
+        )
+        return
+    
+class Combos(AbstractElement):
+    def __init__(self, text: str, key: str) -> None:
+        super().__init__()
+        self.key = key
+        self.events = { self.key }
+        # Elements
+        self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
+        self.combo = sg.Combo(
+            values=["YA_Plate", "L4_Plate", "YA_Glass", "L4_Glass"],
+            default_value="YA_Plate",
+            key=self.key,
+            enable_events=True,
+            s=25,
+            button_background_color=BUTTON_COLOR
+        )
+        self.elements = [ self.text, self.combo,]
+        return
+
+    def handle(self, **kwargs):
+        event = kwargs['event']
+        if event == self.key:
+            pass
+        return
+
+    def add_values(self, values):
+        return
+
+
 ## Joined Combos
 class CombosJoined(AbstractElement):
     # TODO: joined two combos based on each other values -> change colors of valid choices
@@ -713,11 +782,12 @@ class ZInterpolationTracking(AbstractElement):
         self.key_p3 = f"{self.key}-P3"
 
         self.checkbox = sg.Checkbox(
-            text="Plane-Interpolation Z-Tracking",
+            text="Use Plane Interpolation for Z-Tracking",
             key=self.key_checkbox,
             enable_events=True,
             default=False,
-            background_color = BACKGROUND_COLOR
+            background_color = BACKGROUND_COLOR,
+            s=39
         )
         self.p1 = sg.Button(
             button_text="Set Point 1",
