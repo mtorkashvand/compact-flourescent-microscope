@@ -41,8 +41,9 @@ from typing import Tuple
 import zmq
 import cv2 as cv
 import numpy as np
-import onnxruntime
+from cfm.model.ort_loader import load_ort
 from docopt import docopt
+from cfm.devices.tracker_tools import PIDController
 
 from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
 from cfm.zmq.publisher import Publisher
@@ -244,7 +245,6 @@ class TrackerDevice():
         
         # Tracking Parameters
         ## Camera Related
-        # self.SMALLES_TRACKING_OBJECT = 1000  # For Adults
         self.SMALLES_TRACKING_OBJECT = 200  # For Eggs to L1
         self.PIXEL_RATIO_WORM_MAX = 0.25
         self.TRACKEDWORM_SIZE_FLUCTUATIONS = 0.25
@@ -267,9 +267,7 @@ class TrackerDevice():
         self.curr_point = np.zeros(3)
         self.N = np.zeros(3) * np.nan
         self.isN = False
-        # print("interpolation tracking is {}".format(interpolation_tracking))
         ## Tracker Class
-        # self.xytracker = XYTrackerThreshold(tracker = self)
         self.xytracker = XYTrackerRatio(tracker = self)
         
 
@@ -284,8 +282,10 @@ class TrackerDevice():
         (self.dtype, _, self.shape) = array_props_from_string(fmt)  # UINT8_YX_512_512 -> dtype = uint8 , shape = (512,512)
         self.out = np.zeros(self.shape, dtype=self.dtype)
         self.data = np.zeros(self.shape)
-        self.y_worm = self.shape[1]//2
-        self.x_worm = self.shape[0]//2
+        # y is the first index and x is the second index in the image
+        self.y_worm = self.shape[0]//2
+        self.x_worm = self.shape[1]//2
+        self.pid_controller = PIDController(Kpy=40, Kpx=22, Kiy=0, Kix=0, Kdy=0, Kdx=0, SPy=self.shape[0]//2, SPx=self.shape[1]//2)
 
         ## Z Tracking
         self.shrp_idx = 0
@@ -301,46 +301,7 @@ class TrackerDevice():
         self.tracking = False
         self.running = True
 
-        self.ort_session_L1_glass = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L1_glass_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L2_glass = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L2_glass_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L3_glass = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L3_glass_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L4_glass = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L4_glass_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_YA_glass = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_YA_glass_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L1_plate = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L1_plate_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L2_plate = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L2_plate_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L3_plate = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L3_plate_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_L4_plate = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_L4_plate_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
-        self.ort_session_YA_plate = onnxruntime.InferenceSession(
-            # r"C:\src\wormtracker\model_YA_plate_detection_pharynx.onnx"
-            r"C:\src\wormtracker\model_detection_pharynx.onnx"
-        )
+        self.ort_session_YA_plate = load_ort("depnet16.onnx")
 
         # self.ort_session = self.ort_session_YA_plate
         self.set_ort()
@@ -406,9 +367,6 @@ class TrackerDevice():
         }
         ort_outs = self.ort_session.run( None, batch_1_400_400 )
         self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
-        # self.x_worm, self.y_worm = 50, 50
-        # self.publisher_to_forwarder.send(f"tracker_behavior set_worm_xy {x} {y}")
-        # return
     
 
     def set_point(self, i):
@@ -463,12 +421,13 @@ class TrackerDevice():
 
     def detect_using_XY_tracker(self, img):
         img_size = img.size
-        nx, ny = img.shape[:2]
+        ### y is the first index and x is the second index in the image
+        ny, nx = img.shape[:2]
         
         ## Find Objects
         img_mask_objects = self.xytracker.img_to_objects_mask(img)
         ## Worm(s)/Egg(s) Mask
-        _xs, _ys = np.where(~img_mask_objects)  # pixels in background
+        _ys, _xs = np.where(~img_mask_objects)
         img_mask_worms = img_mask_objects
         _, labels, rectangles, centroids = cv.connectedComponentsWithStats(
             img_mask_worms.astype(np.uint8)
@@ -536,17 +495,6 @@ class TrackerDevice():
 
         # Visualize Informations
         img_annotated = img.copy()
-        # for idx, (mask, _) in enumerate(candidates_info):
-        #     _xs, _ys = np.where(mask)
-        #     x_min, x_max = minmax(_xs)
-        #     y_min, y_max = minmax(_ys)
-        #     p1 = (y_min, x_min)
-        #     p2 = (y_max, x_max)
-        #     # Aesthetics
-        #     color = (0,0,0)
-        #     thickness = 10 if idx == idx_closest else 2
-        #     linetype = 1
-        #     cv.rectangle(img_annotated, p1, p2, color, thickness, linetype)
 
         if self.data_publisher_debug is not None:
             img_debug = img_mask_objects.astype(np.uint8)*255
@@ -581,29 +529,15 @@ class TrackerDevice():
 
         return img_annotated
     
-    # def set_worm_xy(self, x, y):
-    #     self.x_worm = int(float(x))
-    #     self.y_worm = int(float(y))
-    #     self.idx_detector_receive += 1
-    #     print(f"<Tracker-{self.name}> {self.idx_detector_receive:>9} {time.time()} worm xy received: ({self.x_worm}, {self.y_worm})")
-    #     return
-    
     def detect_using_Detector(self, img):
 
         self.found_trackedworm = True
-        # self.data_publisher_detector.send(img)
         self.idx_detector_send += 1
-        # print(f"<Tracker-{self.name}> {self.idx_detector_send:>9} {time.time()} worm image sent")
         self.vz = None
 
         # Visualize Informations
         img_annotated = img.copy()
-        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=10, color=(0, 0, 255), thickness=2)
         img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=(255, 0, 0), thickness=2)
-
-        # self.y_worm = 0.05*(self.shape[1]//2) + 0.95 * self.y_worm
-        # self.x_worm = 0.05*(self.shape[0]//2) + 0.95 * self.x_worm
-        # img_annotated = cv.circle(img_annotated, (int(self.x_worm), int(self.y_worm)), radius=3, color=(255, 0, 0), thickness=2)
 
         if self.data_publisher_debug is not None:
             img_debug = img_annotated
@@ -661,15 +595,9 @@ class TrackerDevice():
         elif self.tracking and self.found_trackedworm:
             self.missing_worm_idx = 0
 
-
-        # XY Calculations
-        self.Dx = self.y_worm - self.shape[1]//2
-        self.Dy = self.x_worm - self.shape[0]//2
-
-        # PID ???
+        # PID
         ## Velocities XY
-        self.vx = 3*np.sign(self.Dx) * int(((np.abs(self.Dx) * 2 / self.shape[1]) ** 0.7) * self.shape[1] / 4)
-        self.vy = 3*np.sign(self.Dy) * int(((np.abs(self.Dy) * 2 / self.shape[0]) ** 0.7) * self.shape[0] / 4)
+        self.vy, self.vx = self.pid_controller.get_velocity(self.y_worm, self.x_worm)
 
         ## Velocity Z
         if self.interpolation_tracking:
@@ -680,14 +608,13 @@ class TrackerDevice():
 
         # Set Velocities
         if self.tracking:
-            # self.set_velocities(-self.vx, -self.vy, self.vz)  # DEBUG check if this is the sign
-            # self.set_velocities(self.vx, -self.vy, self.vz)  # DEBUG check if this is the sign
             # DEBUG
             if self.vz is not None:
                 # print(self.vz)
                 pass
-            # self.set_velocities(self.vx, -self.vy, self.vz)
-            self.set_velocities(self.vx, -self.vy, None)
+            
+            ##setting PID parameters
+            self.set_velocities(-self.vy, None, None)
 
         # Return
         return
@@ -722,6 +649,10 @@ class TrackerDevice():
         self.trackedworm_center = None
         self.trackedworm_size = None
         self.tracking = True
+        self.pid_controller.Ix = 0
+        self.pid_controller.Iy = 0
+        self.pid_controller.Ex = 0
+        self.pid_controller.Ey = 0
 
     def stop(self):
         if self.tracking:
@@ -731,6 +662,10 @@ class TrackerDevice():
         self.trackedworm_center = None
         self.trackedworm_size = None
         self.tracking = False
+        self.pid_controller.Ix = 0
+        self.pid_controller.Iy = 0
+        self.pid_controller.Ex = 0
+        self.pid_controller.Ey = 0
 
 
     def set_shape(self, y ,x):

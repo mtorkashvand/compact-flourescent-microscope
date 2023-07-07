@@ -85,22 +85,34 @@ class XboxStageCommands():
     def handle_messages(self, message):
         tokens = message.split(" ")
         if message == "A pressed":
-            self.publish("tracker_behavior toggle_tracking")
+            pass
 
         elif message == "B pressed":
-            self.publish("hub _writer_toggle")
+            pass
 
         elif message == "X pressed":
-            self.publish("teensy_commands toggle_led")
+            pass
 
         elif message == "Y pressed":
-            self.publish("teensy_commands next_led")
+            pass
 
-        elif message == "dpad_left pressed":
-            self.publish("teensy_commands dimdown_led")
+        elif message == "left_shoulder pressed":
+            pass
+
+        elif message == "right_shoulder pressed":
+            pass
 
         elif message == "dpad_right pressed":
-            self.publish("teensy_commands lightup_led")
+            pass
+
+        elif message == "dpad_left pressed":
+            pass
+
+        elif message == "dpad_left pressed":
+            self.publish("teensy_commands change_vel_z -1")
+
+        elif message == "dpad_right pressed":
+            self.publish("teensy_commands change_vel_z 1")
 
         elif message == "dpad_up pressed":
             self.publish("teensy_commands start_z_move -1")
@@ -113,18 +125,6 @@ class XboxStageCommands():
 
         elif message == "dpad_down released":
             self.publish("teensy_commands movez 0")
-
-        elif message == "left_shoulder pressed":
-            self.publish("teensy_commands change_vel_z -1")
-
-        elif message == "right_shoulder pressed":
-            self.publish("teensy_commands change_vel_z 1")
-
-        elif message == "dpad_right pressed":
-            self.publish("tracker_behavior change_threshold 5")
-
-        elif message == "dpad_left pressed":
-            self.publish("tracker_behavior change_threshold -5")
 
         elif tokens[0] == "left_stick":
             xspeed = int(tokens[1]) // 50
