@@ -3,11 +3,8 @@
 # Copyright 2023
 # Author: Mahdi Torkashvand
 
-from typing import Tuple
 import PySimpleGUI as sg
-import time
 
-import cv2 as cv  # install specific version: pip install opencv-python==4.5.2.54
 import zmq
 import numpy as np
 
@@ -36,10 +33,10 @@ class DualDisplayer:
         self.data_g = parse_host_and_port(data_g)
         self.channel = [1, 1]
 
-        self.poller = zmq.Poller()
+        self._q = 0
+        self._max_g = 0
 
-        #TODO: how to update? how to read it from the checkpoint?
-        self.warp_matrix = np.eye(2,3)
+        self.poller = zmq.Poller()
 
         self.subscriber_r = TimestampedSubscriber(
             host=self.data_r[0],
@@ -57,7 +54,7 @@ class DualDisplayer:
 
         self.poller.register(self.subscriber_r.socket, zmq.POLLIN)
         self.poller.register(self.subscriber_g.socket, zmq.POLLIN)
-    
+
     def reset_buffers(self):
         self.image_r = np.zeros(self.shape, dtype=self.dtype)
         self.image_g = np.zeros(self.shape, dtype=self.dtype)
@@ -110,9 +107,9 @@ class DualDisplayer:
                     self.image_g = msg_g[1]
         
         if combine:
-            _q = np.quantile(self.image_g, 0.7)
-            _max_g = np.max( self.image_g )
+            self._q = np.quantile(self.image_g, 0.7)
+            self._max_g = np.max( self.image_g )
             self.image[...,:]  = (self.image_r / 2).astype(np.uint8)[...,None]
-            self.image[...,1] += np.clip((self.image_g.astype(np.float32) - _q ) * _max_g / 2 / (_max_g - _q), 0, 255).astype(np.uint8)
+            self.image[...,1] += np.clip((self.image_g.astype(np.float32) - self._q ) * self._max_g / 2 / (self._max_g - self._q), 0, 255).astype(np.uint8)
             return self.image_r, self.image_g, self.image
         return self.image_r, self.image_g, None

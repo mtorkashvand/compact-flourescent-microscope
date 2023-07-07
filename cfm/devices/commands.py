@@ -84,31 +84,8 @@ class XboxStageCommands():
 
     def handle_messages(self, message):
         tokens = message.split(" ")
-        if message == "A pressed":
-            pass
 
-        elif message == "B pressed":
-            pass
-
-        elif message == "X pressed":
-            pass
-
-        elif message == "Y pressed":
-            pass
-
-        elif message == "left_shoulder pressed":
-            pass
-
-        elif message == "right_shoulder pressed":
-            pass
-
-        elif message == "dpad_right pressed":
-            pass
-
-        elif message == "dpad_left pressed":
-            pass
-
-        elif message == "dpad_left pressed":
+        if message == "dpad_left pressed":
             self.publish("teensy_commands change_vel_z -1")
 
         elif message == "dpad_right pressed":
@@ -137,9 +114,6 @@ class XboxStageCommands():
             yspeed = int(tokens[2])
             self.publish("teensy_commands movey {}".format(yspeed))
             self.publish("teensy_commands movex {}".format(xspeed))
-
-        else:
-            print("Unexpected message received: ", message)
 
         return
 
