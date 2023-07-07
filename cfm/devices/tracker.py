@@ -285,7 +285,7 @@ class TrackerDevice():
         # y is the first index and x is the second index in the image
         self.y_worm = self.shape[0]//2
         self.x_worm = self.shape[1]//2
-        self.pid_controller = PIDController(Kpy=40, Kpx=22, Kiy=0, Kix=0, Kdy=0, Kdx=0, SPy=self.shape[0]//2, SPx=self.shape[1]//2)
+        self.pid_controller = PIDController(Kpy=15, Kpx=15, Kiy=0, Kix=0, Kdy=0, Kdx=0, SPy=self.shape[0]//2, SPx=self.shape[1]//2)
 
         ## Z Tracking
         self.shrp_idx = 0
@@ -537,7 +537,8 @@ class TrackerDevice():
 
         # Visualize Informations
         img_annotated = img.copy()
-        img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=(255, 0, 0), thickness=2)
+        img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=255, thickness=2)
+        img_annotated = cv.circle(img_annotated, (256, 256), radius=2, color=255, thickness=2)  # Center of image
 
         if self.data_publisher_debug is not None:
             img_debug = img_annotated
@@ -614,7 +615,7 @@ class TrackerDevice():
                 pass
             
             ##setting PID parameters
-            self.set_velocities(-self.vy, None, None)
+            self.set_velocities(-self.vy, self.vx, None)
 
         # Return
         return

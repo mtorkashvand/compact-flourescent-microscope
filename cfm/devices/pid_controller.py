@@ -30,21 +30,30 @@ class PIDController():
         self.Iy = 0.0
         self.Ix = 0.0
 
+        self.Vy = 0.0
+        self.Vx = 0.0
+
     def get_velocity(self, y, x):
 
         Ey = self.SPy - y
         Ex = self.SPx - x
         
-        self.Iy += Ey
-        self.Ix += Ex
+        # self.Iy += Ey
+        # self.Ix += Ex
+
+        self.Iy = 0.1*Ey + 0.9*self.Iy
+        self.Ix = 0.1*Ex + 0.9*self.Ix
         
         Dy = Ey - self.Ey
         Dx = Ex - self.Ex
 
         self.Ey = Ey
         self.Ex = Ex
-        
-        Vy = self.Kpy * Ey + self.Kiy * self.Iy + self.Kdy * Dy
-        Vx = self.Kpx * Ex + self.Kix * self.Ix + self.Kdx * Dx
 
-        return int(Vy), int(Vx)
+        self.Vy = self.Kpy * Ey + self.Kiy * self.Iy + self.Kdy * Dy
+        self.Vx = self.Kpx * Ex + self.Kix * self.Ix + self.Kdx * Dx
+
+        # self.Vy = 0.9*self.Kpy * Ey + 0.1 * self.Vy
+        # self.Vx = 0.9*self.Kpx * Ex + 0.1 * self.Vx
+
+        return int(self.Vy), int(self.Vx)
