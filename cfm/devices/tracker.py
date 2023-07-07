@@ -43,7 +43,7 @@ import cv2 as cv
 import numpy as np
 from cfm.model.ort_loader import load_ort
 from docopt import docopt
-from cfm.devices.tracker_tools import PIDController
+from cfm.devices.pid_controller import PIDController
 
 from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
 from cfm.zmq.publisher import Publisher
