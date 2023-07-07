@@ -541,13 +541,21 @@ class InputWithIncrements(AbstractElement):
         ] + [ self.input ] + [
             sg.Button(button_text=f"{inc}",key=event, s=(3, 1)) for event, inc in self.key_to_offset.items() if inc > 0
         ]
+        _, self.camera_name, self.offset_direction = self.key.split('_')
+        self.key_offset_other = 'offset_{}_{}'.format(
+            self.camera_name,
+            'x' if self.offset_direction == 'y' else 'y'
+        )
         return
     # Handle
     def handle(self, **kwargs):
+        # DEBUG
+        binsize = 2  # DEBUG it should not be constant! comply with cfm_gui.py
         event = kwargs['event']
         if event == self.key:
             pass
         else:
+            offset_other = kwargs[self.key_offset_other]
             inc = self.key_to_offset[event]
             value_current = self.type_caster( kwargs[self.key] )
             value_new = min(
@@ -558,6 +566,15 @@ class InputWithIncrements(AbstractElement):
                 )
             )
             self.input.update(value = value_new)
+            if self.offset_direction == 'x':
+                offset_x, offset_y = 224 + value_new, 44 + int(offset_other)
+            else:
+                offset_x, offset_y = 224 + int(offset_other), 44 + value_new
+            client_cli_cmd = "DO _flir_camera_set_region_{} 1 {} {} {} {} {}".format(
+                self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with cfm_gui.py
+            )
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
         return
     # Values
     def add_values(self, values):

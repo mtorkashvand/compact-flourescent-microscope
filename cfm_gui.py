@@ -47,8 +47,8 @@ CAMERA_X_MAX = 1920
 CAMERA_Y_MAX = 1200
 default_b_x_offset = -10
 default_b_y_offset = -44
-default_g_x_offset = -36
-default_g_y_offset = 44
+default_g_x_offset = -34
+default_g_y_offset = -28
 offset_step_small = 2
 offset_step_large = 10
 fmt = "UINT8_YX_512_512"
@@ -178,7 +178,7 @@ ui_offset_gcamp_y = InputWithIncrements(
                 offset_step_large],
     type_caster=int
 )
-elements.append(ui_offset_behavior_y)
+elements.append(ui_offset_gcamp_y)
 
 ui_led_gfp = LEDCompound(
     text="470nm LED power (%)",
@@ -395,6 +395,9 @@ offset_gy = y_bound + int(values['offset_gcamp_y'])
 cfm_with_gui = run_cfm_with_gui(**values)
 cfm_with_gui.run()
 
+# Add some rest time for the camera to initialize so the offset would apply
+time.sleep(1)
+
 client_cli_cmd = "DO _flir_camera_set_region_behavior 1 {} {} {} {} {}".format(
     shape[0], shape[1], binsize, offset_by, offset_bx
 )
@@ -422,7 +425,7 @@ while True:
     # Add values from UI element with expected keys in CFMwithGUI
     for element in elements:
         element.add_values(values)
-
+    
     img_r, img_g, img_combined = dual_displayer.get_frame(combine=True)
     frame_r = cv.imencode('.png', img_combined)[1].tobytes()
     frame_g = cv.imencode('.png', img_g)[1].tobytes()
