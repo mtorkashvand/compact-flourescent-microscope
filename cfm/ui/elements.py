@@ -71,6 +71,12 @@ class AbstractElement:
     def set_client(self, client: GUIClient):
         self.client = client
         return
+    # State
+    def add_state(self, all_states):
+        raise NotImplementedError()
+    def load_state(self, all_states):
+        raise NotImplementedError()
+
 ## Return Key Handler
 class ReturnHandler(AbstractElement):
     # Constructor
@@ -135,7 +141,9 @@ class InputAutoselect(AbstractElement):
         if not isinstance(raw, str):
             return self.type_caster(raw)
         # remove character values
-        res = "0" + "".join([
+        # don't forget the sign
+        sign = "-" if raw[0] == "-" else ""
+        res = sign + "0" + "".join([
             c for c in raw if c.isdigit()
         ])
         return self.type_caster( res )
