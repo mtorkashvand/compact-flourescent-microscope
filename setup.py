@@ -26,7 +26,6 @@ console_scripts = [
     'cfm=cfm.system.cfm:main',
     'cfm_with_gui=cfm.system.cfm_with_gui:main',
     'cfm_teensy_commands=cfm.devices.teensy_commands:main',
-    'detector_pharynx=cfm.devices.detector_pharynx:main',
 ]
 
 setuptools.setup(

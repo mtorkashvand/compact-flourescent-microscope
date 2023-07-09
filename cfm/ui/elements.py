@@ -1118,3 +1118,48 @@ class FolderBrowser(AbstractElement):
         return
     def get(self):
         return self.input.get()
+## Detection Model Selector
+class DetectionModelSelector(AbstractElement):
+    # Constructor
+    def __init__(self) -> None:
+        super().__init__()
+        self.key = "detection_model"
+        self.key_refresh = f"{self.key}-REFRESH"
+        self.comb
+        self.folder_browser = sg.FolderBrowse(
+            key=self.key_browser,
+            button_text = "Browse",
+            button_color=BUTTON_COLOR,
+            target = self.key,
+            initial_folder = "."
+        )
+        self.input = sg.Input(
+            key = self.key,
+            default_text=r"./",
+            size=90,
+            readonly=True,
+            enable_events=True
+        )
+        self.elements = [
+            sg.Text("Data Directory: ", s=(13), background_color = BACKGROUND_COLOR),
+            self.folder_browser,
+            self.input
+        ]
+        self.events = {
+            self.key,
+            self.key_browser
+        }
+        return
+    # Handle
+    def handle(self, **kwargs):
+        # Stop velocity
+        directory = self.get()
+        client_cli_cmd = f"DO _set_directories {directory}"
+        print(f"Executing: '{client_cli_cmd}'")
+        self.client.process(client_cli_cmd)
+        return
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def get(self):
+        return self.input.get()

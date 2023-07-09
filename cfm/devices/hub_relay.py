@@ -46,7 +46,6 @@ class WormTrackerHub(Hub):
         self.framerate=framerate
 
     def shutdown(self):
-        self._detector_pharynx_shutdown()
         self._displayer_shutdown()
         self._writer_shutdown()
         self._flir_camera_shutdown()
@@ -93,10 +92,8 @@ class WormTrackerHub(Hub):
         self.send("displayer_behavior shutdown")
         self.send("displayer_gcamp shutdown")
         self.send("displayer_debug shutdown")
-    
-    def _detector_pharynx_shutdown(self):
-        self.send("detector_pharynx shutdown")
 
+    
     def _data_hub_set_shape(self, z, y, x):
         # TODO: separate functions for cameras?
         self.send("data_hub_behavior set_shape {} {}".format(y, x))
@@ -212,7 +209,10 @@ class WormTrackerHub(Hub):
 
     def _teensy_commands_disable(self):
         self.send("teensy_commands disable")
-    
+
+    def _tracker_set_onnxmodel_path(self, fp_model):
+        self.send("tracker_behavior set_onnxmodel_path {fp_model}")
+
     def duration(self, sec):
         # TODO: separate functions for cameras?
         self.send("writer_behavior set_duration {}".format(sec*self.framerate))

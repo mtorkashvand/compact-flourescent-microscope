@@ -27,8 +27,6 @@ Options:
                                             [default: False]
     --data_out_debug=HOST:PORT                Host and Port for the outgoing debug image.
                                             [default: localhost:5009]
-    --tracker_out_image=HOST:PORT       Host and Port for the outgoing image for detection purpose.
-                                            [default: localhost:5010]
 """
 
 # Modules
@@ -36,6 +34,7 @@ from __future__ import annotations
 import time
 import json
 from typing import Tuple
+import onnxruntime
 
 
 import zmq
@@ -240,8 +239,8 @@ class TrackerDevice():
             fmt: str,
             interpolation_tracking:bool,
             name: str,
-            data_out_debug: Tuple[str, int] = None,
-            tracker_out_image: Tuple[str, int] = None,):
+            data_out_debug: Tuple[str, int] = None
+        ):
         
         # Tracking Parameters
         ## Camera Related
@@ -275,7 +274,6 @@ class TrackerDevice():
         self.status = {}
         self.data_out = data_out
         self.data_out_debug = data_out_debug
-        self.data_out_detector = tracker_out_image
         self.data_in = data_in
         self.poller = zmq.Poller()
         self.name = name
@@ -301,12 +299,7 @@ class TrackerDevice():
         self.tracking = False
         self.running = True
 
-        self.ort_session_YA_plate = load_ort("depnet16.onnx")
-
-        # self.ort_session = self.ort_session_YA_plate
-        self.set_ort()
-        self.magnification = "10x"
-        
+        self.ort_session = None
 
         self.command_publisher = Publisher(
             host=commands_out[0],
@@ -357,16 +350,6 @@ class TrackerDevice():
             self.print("\nTRACKING BY INTERPOLATION\n")
         self.idx_detector_send = 0
         self.idx_detector_receive = 0
-
-    def detect_pharynx(self, img):
-        img_cropped = img[56:-56,56:-56]
-        batch_1_400_400 = {
-            'input': np.repeat(
-                img_cropped[None, None, :, :], 3, 1
-            ).astype(np.float32)
-        }
-        ort_outs = self.ort_session.run( None, batch_1_400_400 )
-        self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
     
 
     def set_point(self, i):
@@ -393,12 +376,6 @@ class TrackerDevice():
                 "normal": str(self.N),
                 "intercept": str(self.d0),
             })
-
-    def set_ort(self, stage='YA', condition='plate'):
-        self.ort_session = self.__getattribute__("ort_session_{}_{}".format(stage, condition))
-
-    def set_magnification(self, magnification="10x"):
-        self.magnification = magnification.lower()
 
     def estimate_vz_by_interpolation(self):
         if not self.isN:
@@ -528,12 +505,29 @@ class TrackerDevice():
             self.vz = None
 
         return img_annotated
-    
-    def detect_using_Detector(self, img):
+
+    def set_onnxmodel_path(self, fp_onnx):
+        self.ort_session = onnxruntime.InferenceSession(fp_onnx)
+        return
+
+    def detect_using_NNModel(self, img):
 
         self.found_trackedworm = True
         self.idx_detector_send += 1
         self.vz = None
+
+        ## Detect using Model
+        if self.ort_session is not None:
+            img_cropped = img[56:-56,56:-56]
+            batch_1_400_400 = {
+                'input': np.repeat(
+                    img_cropped[None, None, :, :], 3, 1
+                ).astype(np.float32)
+            }
+            ort_outs = self.ort_session.run( None, batch_1_400_400 )
+            self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
+        else:  # No ORT Session
+            self.y_worm, self.x_worm = self.shape[0]//2, self.shape[1]//2
 
         # Visualize Informations
         img_annotated = img.copy()
@@ -567,8 +561,8 @@ class TrackerDevice():
         img = self.data
 
         # img_annotated = self.detect_using_XY_tracker(img)
-        self.detect_pharynx(img)
-        img_annotated = self.detect_using_Detector(img)
+        img_annotated = self.detect_using_NNModel(img)
+        
         # Behavior Displayer
         self.data_publisher.send(img_annotated)
 

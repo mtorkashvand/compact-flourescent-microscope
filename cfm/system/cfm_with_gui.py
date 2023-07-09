@@ -61,7 +61,6 @@ class CFMwithGUI:
         data_stamped_gcamp = 5007,
         tracker_out_gcamp = 5008,
         tracker_out_debug  = 5009,
-        tracker_out_image = 5010,
         framerate = 20,
         data_directory = r"C:\src\data",
         logger_directory = r"C:\src\data",
@@ -106,7 +105,6 @@ class CFMwithGUI:
         data_stamped_gcamp = self.kwargs['data_stamped_gcamp']
         tracker_out_gcamp = self.kwargs['tracker_out_gcamp']
         tracker_out_debug  = self.kwargs['tracker_out_debug']
-        tracker_out_image = self.kwargs['tracker_out_image']
         data_directory = self.kwargs['data_directory']  # "C:\src\data"
         logger_directory = self.kwargs['logger_directory']  # "C:\src\data"
         framerate = self.kwargs['framerate']
@@ -223,7 +221,6 @@ class CFMwithGUI:
                             f"--interpolation_tracking={interpolation_tracking}",
                             f"--name=tracker_behavior",
                             f"--data_out_debug={tracker_out_debug}",
-                            f"--tracker_out_image={tracker_out_image}",
                         ]))
             ## GCaMP  Tracker
             self.jobs.append(Popen(["cfm_tracker",
@@ -235,14 +232,7 @@ class CFMwithGUI:
                             f"--interpolation_tracking={interpolation_tracking}",
                             f"--name=tracker_gcamp",
                             f"--data_out_debug={tracker_out_debug}",
-                            f"--tracker_out_image={tracker_out_image+2000}",
                         ]))
-            ## Detector Pharynx
-            # self.jobs.append(Popen(["detector_pharynx",
-            #                 f"--input_image=L{tracker_out_image}",
-            #                 f"--to_forwarder=L{forwarder_in}",
-            #                 f"--input_commands=L{forwarder_out}",
-            #                 ]))
 
             self.jobs.append(Popen(["cfm_teensy_commands",
                             f"--inbound=L{forwarder_out}",

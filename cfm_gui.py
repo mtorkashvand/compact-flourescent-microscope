@@ -86,22 +86,6 @@ def run_cfm_with_gui(**kwargs):
         **kwargs
     )
     return cfm_with_gui
-##
-
-# Classes
-
-# Main
-# Define the window's contents
-# layout = [
-#     [sg.Text("What's your name?")],
-#     [sg.Input(key='-INPUT-')],
-#     [sg.Text(size=(40,1), key='-OUTPUT-')],
-#     [sg.Button('Ok'), sg.Button('Quit')]
-# ]
-# TODO: check if using `Column Element` will help organizing
-# TODO: use `Image Element` with `update` to show frames?
-# TODO: use `Menu Element` to add menu bars on top of the window
-# TODO:
 
 
 

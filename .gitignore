@@ -12,3 +12,6 @@ cfm/icons/icons.py
 # Data
 *.onnx
 *.zip
+
+# Network
+network/
