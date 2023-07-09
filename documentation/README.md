@@ -1,3 +1,4 @@
+# Graphical User Interface (GUI)
 Once the installation is complete, find the OpenAutoScope2.0 icon, and to launch the software double-click on the icon.
 The software's graphical user interface (GUI) resembles the image displayed below.
   
@@ -8,7 +9,7 @@ The software's graphical user interface (GUI) resembles the image displayed belo
 <a name="1"></a>
 ### 1: Recorder Toggle
 This button serves as a toggle for recording. The current recording status, indicating whether recording is active or not, is displayed next to the button.
-Once the recording begins, two HDF files and a log file are generated at the location specified in [__data directory__](#L[17]).
+Once the recording begins, two HDF files and a log file are generated at the location specified in [__data directory__](#3).
 <a name="2"></a>
 ### 2: Tracker Toggle
 This button functions as a toggle for tracking. The tracking method is determined by [__plane interpolation z tracking__](#11),
