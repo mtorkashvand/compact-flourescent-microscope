@@ -69,7 +69,7 @@ you can specify the tracking method to be utilized based on the requirements of 
 <a name="14"></a>
 ### 14: Behavior Displayer
 This displays the frames overlaid from the behavior channel and the GFP channel. Before overlaying, a background subtraction is applied to the frame from the GFP channel.
-To learn more about how to adjust the level of background subtraction, refer to the parameters in the configuration file.The white circle represents the output of the tracking
+To learn more about how to adjust the level of background subtraction, refer to the [parameters](documentation/parameters.md) in the configuration file.The white circle represents the output of the tracking
 algorithm. It is advised to initiate tracking only if the output aligns with your expectations.
 <a name="15"></a>
 ### 15: Behavior Camera Cropping Offset
