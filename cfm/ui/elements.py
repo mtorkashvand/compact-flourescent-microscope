@@ -73,9 +73,9 @@ class AbstractElement:
         return
     # State
     def add_state(self, all_states):
-        raise NotImplementedError()
+        return
     def load_state(self, all_states):
-        raise NotImplementedError()
+        return
 
 ## Return Key Handler
 class ReturnHandler(AbstractElement):
@@ -240,12 +240,6 @@ class LEDCompound(AbstractElement):
         if not self.toggle:
             return 0
         return self.input_as.get()
-    def add_state(self, all_states):
-        self.input_as.add_state( all_states )
-        return
-    def load_state(self, all_states):
-        self.input_as.load_state( all_states )
-        return
 
 ## LED IR
 class LEDIR(AbstractElement):
@@ -298,10 +292,6 @@ class LEDIR(AbstractElement):
         return
     def get(self):
         return self.toggle
-    def add_state(self, all_states):
-        return
-    def load_state(self, all_states):
-        return
 
 ## Recording
 class ToggleRecording(AbstractElement):
@@ -728,10 +718,11 @@ class InputwithIncrementsforZOffset(AbstractElement):
 
 
 class ModelsCombo(AbstractElement):
-    def __init__(self, text: str, key: str, fp_models_paths: str) -> None:
+    def __init__(self, text: str, key: str, fp_models_paths: str, default_value: str = None) -> None:
         super().__init__()
         self.fp_models_paths = fp_models_paths
         self.model_paths = dict()
+        self.default_value = default_value
 
         self.key = key
         self.key_combo = f"{self.key}--COMBO"
@@ -742,21 +733,20 @@ class ModelsCombo(AbstractElement):
         # Elements
         self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
         self.combo = sg.Combo(
-            values=["No Models Loaded"],
-            default_value="No Models Loaded",
+            values=["No Models Loaded"] if default_value is None else [default_value],
+            default_value="No Models Loaded" if default_value is None else default_value,
             key=self.key_combo,
             enable_events=True,
             s=25,
             button_background_color=BUTTON_COLOR
         )
-        self.elements = [ self.text, self.combo,]
-        # Load Models
-        self._load_models()
+        self.elements = [ self.text, self.combo ]
         return
     
     def _load_models(self):
         # TODO: load models each time the combo is selected or in some other way
         self.model_paths = jload( self.fp_models_paths )
+        print(self.model_paths)
         self.combo.update(
             values=list(self.model_paths), value=list(self.model_paths)[0]
         )
@@ -1018,6 +1008,7 @@ class ZGamePad(AbstractElement):
             key="zpad", input_size=5, input_bounds=(0,2048),
             font=(None,19),
             icon_size: Tuple[int, int] = (64, 64),
+            default_value: int = 0
         ) -> None:
         super().__init__()
 
@@ -1029,6 +1020,8 @@ class ZGamePad(AbstractElement):
         self.key_input = f"{self.key}-input"
         self.key_zpos = f"{self.key}_$Z$$+$"
         self.key_zneg = f"{self.key}_$Z$$-$"
+
+        self.default_value = default_value
 
 
         self.button_zpos = sg.Button(
@@ -1046,7 +1039,7 @@ class ZGamePad(AbstractElement):
         
         self.input_as = InputAutoselect(
             key=self.key_input,
-            default_text="0",
+            default_text=str(self.default_value),
             bounds=input_bounds,
             size=input_size,
             type_caster=int,

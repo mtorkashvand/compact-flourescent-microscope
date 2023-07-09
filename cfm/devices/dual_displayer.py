@@ -21,7 +21,9 @@ class DualDisplayer:
             data_r: str,
             data_g: str,
             fmt: str,
-            name: str):
+            name: str,
+            q: float = 0.0
+        ):
 
         self.window = window
         (_, _, self.shape) = array_props_from_string(fmt)
@@ -33,6 +35,7 @@ class DualDisplayer:
         self.data_g = parse_host_and_port(data_g)
         self.channel = [1, 1]
 
+        self.q = q if q is not None else 0.0
         self._q = 0
         self._max_g = 0
 
@@ -107,7 +110,7 @@ class DualDisplayer:
                     self.image_g = msg_g[1]
         
         if combine:
-            self._q = np.quantile(self.image_g, 0.7)
+            self._q = np.quantile(self.image_g, self.q)
             self._max_g = np.max( self.image_g )
             self.image[...,:]  = (self.image_r / 2).astype(np.uint8)[...,None]
             self.image[...,1] += np.clip((self.image_g.astype(np.float32) - self._q ) * self._max_g / 2 / (self._max_g - self._q), 0, 255).astype(np.uint8)

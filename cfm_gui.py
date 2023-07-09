@@ -38,18 +38,46 @@ from cfm.ui.elements import (
 
 from cfm.icons.icons import *
 
+
+import json
+## JLoad
+def jload(fp):
+    with open(fp, 'r', encoding='utf-8') as in_file:
+        return json.load( in_file )
+## JDump
+def jdump(obj, fp):
+    with open(fp, 'w', encoding='utf-8') as out_file:
+        json.dump(
+            obj, out_file,
+            sort_keys=False,
+            ensure_ascii=False,
+            indent=1
+        )
+    return
+
 # Get Path
 FP_CFM_GUI_FOLDER = os.path.dirname(os.path.abspath(__file__))
 FP_MODELS_PATHS = os.path.join(
     FP_CFM_GUI_FOLDER,
     "models_path.json"
 )
-FP_DATA_PATH = os.path.join(
+fp_data_path = os.path.join(
     FP_CFM_GUI_FOLDER,
     "data"
 )
-if not os.path.exists(FP_DATA_PATH):
-    os.mkdir(FP_DATA_PATH)
+
+
+# Load Configs
+fp_configs = os.path.join(
+    FP_CFM_GUI_FOLDER,
+    "configs.json"
+)
+all_states = jload(fp_configs) if os.path.exists(fp_configs) else dict()
+print(all_states)
+if 'data_directory' in all_states:
+    fp_data_path = all_states['data_directory']
+if not os.path.exists(fp_data_path):
+    os.mkdir(fp_data_path)
 
 # Parameters
 DEBUG = False
@@ -60,10 +88,10 @@ ICON_SIZE = (64, 64)
 # These numbers are subject to change based on the camera model and its orientation when mounted.
 CAMERA_X_MAX = 1920
 CAMERA_Y_MAX = 1200
-default_b_x_offset = -10
-default_b_y_offset = -44
-default_g_x_offset = -34
-default_g_y_offset = -28
+default_b_x_offset = -10 if 'offset_behavior_x' not in all_states else all_states['offset_behavior_x']
+default_b_y_offset = -44 if 'offset_behavior_y' not in all_states else all_states['offset_behavior_y']
+default_g_x_offset = -34 if 'offset_gcamp_x' not in all_states else all_states['offset_gcamp_x']
+default_g_y_offset = -28 if 'offset_gcamp_y' not in all_states else all_states['offset_gcamp_y']
 offset_step_small = 2
 offset_step_large = 10
 fmt = "UINT8_YX_512_512"
@@ -100,7 +128,6 @@ def run_cfm_with_gui(**kwargs):
         **kwargs
     )
     return cfm_with_gui
-
 
 
 #####################
@@ -233,7 +260,7 @@ elements.append(ui_exposure_behavior)
 ui_framerate = FramerateCompound(
     ui_exposure_behavior,
     ui_exposure_gfp,
-    framerate_default = 20,
+    framerate_default = 20 if 'framerate' not in all_states else all_states['framerate'],
     icon=ICON_FPS,
     icon_size=ICON_SIZE
 )
@@ -245,25 +272,34 @@ elements.append(ui_interpolation_tracking)
 ui_tracking_model = ModelsCombo(
     text="Sample Stage/Condition",
     key="tracking_model",
-    fp_models_paths = FP_MODELS_PATHS
+    fp_models_paths = FP_MODELS_PATHS,
+    default_value=None if 'tracking_model--COMBO' not in all_states else all_states['tracking_model--COMBO']
 )
 elements.append(ui_tracking_model)
 
-ui_tracker_z_offset = InputwithIncrementsforZOffset(text= "Tracker Z Offset", key="z_offset", default_value=0)
+ui_tracker_z_offset = InputwithIncrementsforZOffset(
+    text= "Tracker Z Offset",
+    key="z_offset",
+    default_value=0 if 'z_offset' not in all_states else all_states['z_offset']
+)
 elements.append(ui_tracker_z_offset)
 
 ui_xygamepad = XYGamePad(
     icon_xleft=ICON_X_NEG, icon_xright=ICON_X_POS,
-    icon_yleft=ICON_Y_NEG, icon_yright=ICON_Y_POS
+    icon_yleft=ICON_Y_NEG, icon_yright=ICON_Y_POS,
+    default_value=0 if 'xypad-input' not in all_states else all_states['xypad-input']
 )
 elements.append(ui_xygamepad)
 
-ui_zgamepad = ZGamePad(icon_zpos=ICON_Z_POS, icon_zneg=ICON_Z_NEG)
+ui_zgamepad = ZGamePad(
+    icon_zpos=ICON_Z_POS, icon_zneg=ICON_Z_NEG,
+    default_value=0 if 'zpad-input' not in all_states else all_states['zpad-input']
+)
 elements.append(ui_zgamepad)
 
 
 ui_folder_browser = FolderBrowser(
-    default_path = FP_DATA_PATH
+    default_path = fp_data_path
 )
 elements.append(ui_folder_browser)
 
@@ -379,8 +415,9 @@ dual_displayer = DualDisplayer(
     data_r=f"L{tracker_out_behavior}",  # displayer port for the behavior data
     data_g=f"L{tracker_out_gcamp}",  # displayer port for the gcamp data
     fmt=fmt,  # image format accroding to 'array_props_from_string'
-    name="displayer"  # image displayers name start with 'displayer' 
-    )
+    name="displayer",  # image displayers name start with 'displayer',
+    q=0.0 if 'q' not in all_states else float(all_states['q'])
+)
 
 def zero_displayers():
     _tmp = np.zeros(shape, dtype=np.uint8)
@@ -395,6 +432,8 @@ event, values = window.read(timeout=0)
 # Binding Press/Release Buttons
 ui_xygamepad.bind()
 ui_zgamepad.bind()
+# Load Model
+ui_tracking_model._load_models()
 
 offset_bx = x_bound + int(values['offset_behavior_x'])
 offset_by = y_bound + int(values['offset_behavior_y'])
