@@ -11,12 +11,12 @@
 
 ### 1: Recorder Toggle <a name="recorder-toggle"></a>
 This button serves as a toggle for recording. The current recording status, indicating whether recording is active or not, is displayed next to the button.
-Once the recording begins, two HDF files and a log file are generated at the location specified in [__data directory__](#3-data-directory-).
+Once the recording begins, two HDF files and a log file are generated at the location specified in [__data directory__](#data-directory).
 ### 2: Tracker Toggle <a name="tracker-toggle"></a>
 This button functions as a toggle for tracking. The tracking method is determined by [__plane interpolation z tracking__](#plane-interpolation-z-tracking),
 [__tracking's Z offset__](#tracking-s-z-offset), and [__tracking mode__](#tracking-mode).
 The current tracking status, indicating whether tracking is active or not, is displayed next to the button.
-### 3: Data Directory
+### 3: Data Directory <a name="data-directory"></a>
 Here, you can specify the location where the log file and data are saved. It is recommended to create separate folders for each recording session.
 ### 4: Frame Per Second <a name="frame-per-second"></a>
 You can set the imaging frame rate here. The minimum and maximum allowed values are indicated in parentheses. For most behavioral experiments, a frame rate of 20Hz is sufficient.
