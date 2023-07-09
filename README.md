@@ -52,10 +52,10 @@ These six buttons enable you to move the stage in the X, Y, and Z directions. Th
 independently from the velocity of the Z direction. Pressing and holding a button initiates motion in the desired direction, and releasing the button stops the stage's movement.
 <a name="11"></a>
 ### 11: Plane Interpolation Z Tracking
-This mode is designed for precise Z tracking. To utilize this mode, the sample needs to be prepared on the surface of the glass (refer to the sample preparation protocol).
-Three points on the glass surface should be marked (using a sharpie, for example). If the user chooses to use this tracking mode, they should manually adjust the motor
-in the X, Y, and Z directions to focus on each marked point and then press the 'Set Point' button. These three points define the plane of the glass surface and will be
-used to maintain the Z position consistently on this plane.
+This mode is designed for precise Z tracking. To utilize this mode, the sample needs to be prepared on the surface of the glass
+(learn more about [sample preparation](documentation/sample_preparation.md)). Three points on the glass surface should be marked (using a sharpie, for example).
+If the user chooses to use this tracking mode, they should manually adjust the motor in the X, Y, and Z directions to focus on each marked point and then press
+the 'Set Point' button. These three points define the plane of the glass surface and will be used to maintain the Z position consistently on this plane.
 <a name="12"></a>
 ### 12: Tracking's Z Offset
 Regardless of the algorithm utilized for Z tracking, there's a chance that the neurons or fluorescent elements in the sample might be situated at a different Z position
@@ -64,7 +64,7 @@ channel, even if they're placed at a Z position different from the predicted Z (
 <a name="13"></a>
 ### 13: Tracking Mode
 There are various tracking algorithms available for capturing motion in the x-y plane. The appropriate method to be used depends on factors such as the magnification of the
-objective, imaging conditions (please refer to the sample preparation protocol), and the developmental stage of the animal (L1, L2, L3, L4, YA). In this section,
+objective, imaging conditions (learn more about [sample preparation](documentation/sample_preparation.md)), and the developmental stage of the animal (L1, L2, L3, L4, YA). In this section,
 you can specify the tracking method to be utilized based on the requirements of your experiment.
 <a name="14"></a>
 ### 14: Behavior Displayer
