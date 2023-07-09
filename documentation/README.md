@@ -14,8 +14,8 @@ The manufacturing of the printed circuit board (PCB) typically requires a certai
 
 ## Software Installation
 
-## Graphical User Interface (GUI)
-[This](GUI.md) document provides an explanation of the various elements present in the graphical user interface (GUI) and their respective functions.
+## [Graphical User Interface (GUI)](GUI.md)
+This document provides an explanation of the various elements present in the graphical user interface (GUI) and their respective functions.
 It is assumed that you have already assembled the system before proceeding to this stage.
 
 ## Motion Controll With The Xbox Controller
