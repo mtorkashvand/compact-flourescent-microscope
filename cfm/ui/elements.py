@@ -1,4 +1,6 @@
 # Modules
+import json
+
 from typing import Dict, List, Tuple
 from collections import defaultdict
 import PySimpleGUI as sg
@@ -17,6 +19,20 @@ def sg_input_port(key, port):
         size=5,
         default_text=str(port)
     )
+## JLoad
+def jload(fp):
+    with open(fp, 'r', encoding='utf-8') as in_file:
+        return json.load( in_file )
+## JDump
+def jdump(obj, fp):
+    with open(fp, 'w', encoding='utf-8') as out_file:
+        json.dump(
+            obj, out_file,
+            sort_keys=False,
+            ensure_ascii=False,
+            indent=1
+        )
+    return
 
 # Classes
 ## Abstract Element with disable/enable, status
@@ -630,31 +646,54 @@ class InputwithIncrementsforZOffset(AbstractElement):
         )
         return
     
-class Combos(AbstractElement):
-    def __init__(self, text: str, key: str) -> None:
+class ModelsCombo(AbstractElement):
+    def __init__(self, text: str, key: str, fp_models_paths: str) -> None:
         super().__init__()
+        self.fp_models_paths = fp_models_paths
+        self.model_paths = dict()
+
         self.key = key
-        self.events = { self.key }
+        self.key_combo = f"{self.key}--COMBO"
+        self.events = {
+            self.key,
+            self.key_combo
+        }
         # Elements
         self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
         self.combo = sg.Combo(
-            values=["YA_Plate", "L4_Plate", "YA_Glass", "L4_Glass"],
-            default_value="YA_Plate",
-            key=self.key,
+            values=["No Models Loaded"],
+            default_value="No Models Loaded",
+            key=self.key_combo,
             enable_events=True,
             s=25,
             button_background_color=BUTTON_COLOR
         )
         self.elements = [ self.text, self.combo,]
+        # Load Models
+        self._load_models()
         return
+    
+    def _load_models(self):
+        self.model_paths = jload( self.fp_models_paths )
+        self.combo.update(
+            values=list(self.model_paths), value=list(self.model_paths)[0]
+        )
+        return
+
 
     def handle(self, **kwargs):
         event = kwargs['event']
-        if event == self.key:
-            pass
+        if event == self.key_combo:
+            combo_value = kwargs[self.key_combo]
+            fp_model = self.model_paths[combo_value]
+            client_cli_cmd = "DO _tracker_set_onnxmodel_path {}".format(fp_model)
+            print(f"Executing: '{client_cli_cmd}'")
+            self.client.process(client_cli_cmd)
         return
 
     def add_values(self, values):
+        combo_value = values[self.key_combo]
+        values[self.key] = self.model_paths[combo_value]
         return
 
 

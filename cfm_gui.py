@@ -16,6 +16,7 @@
 # https://www.pysimplegui.org/en/latest/call%20reference/#the-elements
 
 # Modules
+import os
 import time
 from collections import defaultdict
 
@@ -31,11 +32,18 @@ from cfm.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
     ZInterpolationTracking, ToggleRecording, ToggleTracking,
-    XYGamePad, ZGamePad, FolderBrowser, Combos,
+    XYGamePad, ZGamePad, FolderBrowser, ModelsCombo,
     InputwithIncrementsforZOffset
 )
 
 from cfm.icons.icons import *
+
+# Get Path
+FP_CFM_GUI_FOLDER = os.path.dirname(os.path.abspath(__file__))
+FP_MODELS_PATHS = os.path.join(
+    FP_CFM_GUI_FOLDER,
+    "models_path.json"
+)
 
 # Parameters
 DEBUG = False
@@ -227,7 +235,11 @@ elements.append(ui_framerate)
 ui_interpolation_tracking = ZInterpolationTracking()
 elements.append(ui_interpolation_tracking)
 
-ui_tracking_model = Combos(text="Sample Stage/Condition", key="tracking_model")
+ui_tracking_model = ModelsCombo(
+    text="Sample Stage/Condition",
+    key="tracking_model",
+    fp_models_paths = FP_MODELS_PATHS
+)
 elements.append(ui_tracking_model)
 
 ui_tracker_z_offset = InputwithIncrementsforZOffset(text= "Tracker Z Offset", key="z_offset", default_value=0)
