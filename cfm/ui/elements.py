@@ -104,6 +104,7 @@ class ReturnHandler(AbstractElement):
         return
     def enable(self):
         return
+
 ## Input Element with Autoselect and Enter Event handling
 class InputAutoselect(AbstractElement):
     def __init__(self, key: str, default_text: int, size, type_caster=int, bounds=(None, None), font=None) -> None:
@@ -155,6 +156,15 @@ class InputAutoselect(AbstractElement):
             self.bound_upper = bound_upper
         self.handle()
         return
+    # State
+    def add_state(self, all_states):
+        all_states[self.key] = self.get()
+        return
+    def load_state(self, all_states):
+        self.input.update(value = all_states[self.key])
+        self.handle()
+        return
+
 ## LED Combined Elements
 class LEDCompound(AbstractElement):
     # Cosntructor
@@ -216,7 +226,6 @@ class LEDCompound(AbstractElement):
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} 0"
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
-
         return
     def add_values(self, values):
         values[self.key] = self.get()
@@ -231,6 +240,13 @@ class LEDCompound(AbstractElement):
         if not self.toggle:
             return 0
         return self.input_as.get()
+    def add_state(self, all_states):
+        self.input_as.add_state( all_states )
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state( all_states )
+        return
+
 ## LED IR
 class LEDIR(AbstractElement):
     # Cosntructor
@@ -282,8 +298,12 @@ class LEDIR(AbstractElement):
         return
     def get(self):
         return self.toggle
+    def add_state(self, all_states):
+        return
+    def load_state(self, all_states):
+        return
 
-
+## Recording
 class ToggleRecording(AbstractElement):
     # Cosntructor
     def __init__(
@@ -339,9 +359,8 @@ class ToggleRecording(AbstractElement):
         return
     def get(self):
         return self.toggle
-    
 
-
+## Tracking
 class ToggleTracking(AbstractElement):
     # Cosntructor
     def __init__(
@@ -469,7 +488,13 @@ class ExposureCompound(AbstractElement):
         return
     def get(self):
         return self.input_as.get()
-
+    # State
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state(all_states)
+        return
 
 ## Framerate Compound
 class FramerateCompound(AbstractElement):
@@ -481,6 +506,7 @@ class FramerateCompound(AbstractElement):
             icon, icon_size,
             key: str = 'framerate',
             text: str = "Imaging Frame Rate (min:1, max:48)",
+            framerate_default: int = 20,
             bounds=(1, 48),
             type_caster = int
         ) -> None:
@@ -488,6 +514,7 @@ class FramerateCompound(AbstractElement):
         self.element_exposure_behavior = element_exposure_behavior
         self.element_exposure_gfp = element_exposure_gfp
         self.key = key
+        self.framerate_default = framerate_default
         self.icon = icon
         self.icon_size = icon_size
         self.bounds = bounds
@@ -502,7 +529,7 @@ class FramerateCompound(AbstractElement):
             background_color = BACKGROUND_COLOR
         )
         self.input_as = InputAutoselect(
-            key=self.key, default_text='20', size=6, type_caster=type_caster,
+            key=self.key, default_text=str(framerate_default), size=6, type_caster=type_caster,
             bounds=self.bounds
         )
         self.unit = sg.Text(
@@ -539,6 +566,16 @@ class FramerateCompound(AbstractElement):
         return
     def get(self):
         return self.input_as.get()
+    # State
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state(all_states)
+        self.handle({
+            self.key: self.get()
+        })
+        return
 
 class InputWithIncrements(AbstractElement):
     # Constructor
@@ -557,12 +594,18 @@ class InputWithIncrements(AbstractElement):
         }
         self.events = set(self.key_to_offset)
         self.events.add(self.key)
-        self.input = sg.Input(default_text=self.default_value, key=key, size=4)
+        self.input_as = InputAutoselect(
+            key=key,
+            default_text=self.default_value,
+            size=4,
+            type_caster=self.type_caster,
+            bounds=bounds
+        )
         self.elements = [
             sg.Text(self.text, background_color = BACKGROUND_COLOR)
         ] + [
             sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc < 0
-        ] + [ self.input ] + [
+        ] + [ *self.input_as.elements ] + [
             sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc > 0
         ]
         _, self.camera_name, self.offset_direction = self.key.split('_')
@@ -576,10 +619,8 @@ class InputWithIncrements(AbstractElement):
         # DEBUG
         binsize = 2  # DEBUG it should not be constant! comply with cfm_gui.py
         event = kwargs['event']
-        if event == self.key:
-            pass
-        else:
-            offset_other = kwargs[self.key_offset_other]
+        offset_other = kwargs[self.key_offset_other]
+        if event != self.key:
             inc = self.key_to_offset[event]
             value_current = self.type_caster( kwargs[self.key] )
             value_new = min(
@@ -589,31 +630,37 @@ class InputWithIncrements(AbstractElement):
                     value_current + inc
                 )
             )
-            self.input.update(value = value_new)
-            if self.offset_direction == 'x':
-                offset_x, offset_y = 224 + value_new, 44 + int(offset_other)
-            else:
-                offset_x, offset_y = 224 + int(offset_other), 44 + value_new
-            client_cli_cmd = "DO _flir_camera_set_region_{} 1 {} {} {} {} {}".format(
-                self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with cfm_gui.py
-            )
-            print(f"Executing: '{client_cli_cmd}'")
-            self.client.process(client_cli_cmd)
+            self.input_as.input.update(value = value_new)
+        # Get Values and Set
+        self.input_as.handle(**kwargs)
+        value_new = self.get()
+        if self.offset_direction == 'x':
+            offset_x, offset_y = 224 + value_new, 44 + int(offset_other)
+        else:
+            offset_x, offset_y = 224 + int(offset_other), 44 + value_new
+        client_cli_cmd = "DO _flir_camera_set_region_{} 1 {} {} {} {} {}".format(
+            self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with cfm_gui.py
+        )
+        print(f"Executing: '{client_cli_cmd}'")
+        self.client.process(client_cli_cmd)
         return
+    # Get
+    def get(self):
+        return self.input_as.get()
     # Values
     def add_values(self, values):
-        values[self.key] = self.type_caster(
-            self.input.get()
-        )
+        values[self.key] = self.get()
         return
-## Advanced Ports Menu
-class PortsMenu(AbstractElement):
-    # TODO: create all ports inputs in a single element
-    # - add toggle functionality to expand/collapse or display/hide ports options
-    # Constructor
-    def __init__(self) -> None:
+    # State
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
         return
-
+    def load_state(self, all_states):
+        self.input_as.load_state( all_states )
+        self.handle({
+            self.key: self.get()
+        })
+        return
 
 class InputwithIncrementsforZOffset(AbstractElement):
     # Constructor
@@ -632,28 +679,54 @@ class InputwithIncrementsforZOffset(AbstractElement):
         }
         self.events = set(self.key_to_offset)
         self.events.add(self.key)
-        self.input = sg.Input(default_text=self.default_value, key=key, size=4)
+        self.input_as = InputAutoselect(
+            key=key,
+            default_text=self.default_value,
+            size=4,
+            type_caster=self.type_caster,
+            bounds=bounds
+        )
         self.elements = [
             sg.Text(self.text, background_color = BACKGROUND_COLOR)
         ] + [
             sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc < 0
-        ] + [ self.input ] + [
+        ] + [ *self.input_as.elements ] + [
             sg.Button(button_text=f"{inc}",key=event, s=(3, 1), button_color=BUTTON_COLOR) for event, inc in self.key_to_offset.items() if inc > 0
         ]
         return
 
+    # Handle
     def handle(self, **kwargs):
         event = kwargs['event']
-        if event == self.key:
-            pass
-        return
-
-    def add_values(self, values):
-        values[self.key] = self.type_caster(
-            self.input.get()
-        )
+        if event != self.key:
+            inc = self.key_to_offset[event]
+            value_current = self.get()
+            value_new = value_current + inc
+            self.input_as.input.update(value = value_new)
+        # Get Values and Set
+        self.input_as.handle(**kwargs)
+        value_new = self.get()
+        # TODO: add offset-z functionality and CMD call
+        # client_cli_cmd = ""
+        # print(f"Executing: '{client_cli_cmd}'")
+        # self.client.process(client_cli_cmd)
         return
     
+    def get(self):
+        return self.input_as.get()
+
+    def add_values(self, values):
+        values[self.key] = self.get()
+        return
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state( all_states )
+        self.handle()
+        return
+
+
 class ModelsCombo(AbstractElement):
     def __init__(self, text: str, key: str, fp_models_paths: str) -> None:
         super().__init__()
@@ -682,6 +755,7 @@ class ModelsCombo(AbstractElement):
         return
     
     def _load_models(self):
+        # TODO: load models each time the combo is selected or in some other way
         self.model_paths = jload( self.fp_models_paths )
         self.combo.update(
             values=list(self.model_paths), value=list(self.model_paths)[0]
@@ -692,128 +766,29 @@ class ModelsCombo(AbstractElement):
     def handle(self, **kwargs):
         event = kwargs['event']
         if event == self.key_combo:
-            combo_value = kwargs[self.key_combo]
-            fp_model = self.model_paths[combo_value]
+            fp_model = self.model_paths[self.get()]
             client_cli_cmd = "DO _tracker_set_onnxmodel_path {}".format(fp_model)
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
+    
+    def get(self):
+        return self.combo.get()
 
     def add_values(self, values):
-        combo_value = values[self.key_combo]
-        values[self.key] = self.model_paths[combo_value]
+        values[self.key] = self.model_paths[self.get()]
+        return
+    
+    def add_state(self, all_states):
+        all_states[self.key_combo] = self.get()
+        return
+    def load_state(self, all_states):
+        self.combo.update(value=all_states[self.key_combo])
+        self.handle({
+            self.key_combo: self.get()
+        })
         return
 
-
-## Joined Combos
-class CombosJoined(AbstractElement):
-    # TODO: joined two combos based on each other values -> change colors of valid choices
-    # e.g. binsize and format (shape of image crop)
-    # Constructor
-    def __init__(self, text1: str, text2: str, v1_to_v2s: Dict[str, str], default_v1: str, default_v2: str, key1: str, key2: str) -> None:
-        super().__init__()
-        # Parameters
-        self.v1_to_v2s = {
-            k: sorted(v) for k,v in v1_to_v2s.items()
-        }
-        self.v2_to_v1s = defaultdict(set)
-        for v1,v2s in self.v1_to_v2s.items():
-            for v2 in v2s:
-                self.v2_to_v1s[v2].add(v1)
-        self.v2_to_v1s = {
-            k:sorted(v) for k,v in self.v2_to_v1s.items()
-        }
-        self.default_v1, self.default_v2 = default_v1, default_v2
-        self.key1, self.key2 = key1, key2
-        self.events = { self.key1, self.key2 }
-        # Elements
-        assert self.default_v1 in self.v1_to_v2s, "`default_v1` is not in `v1_to_v2s`"
-        assert self.default_v2 in self.v1_to_v2s[self.default_v1], "`default_v2` is not in `v1_to_v2s[default_v1]`"
-        self.text1 = sg.Text(text1, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
-        self.text2 = sg.Text(text2, background_color = BACKGROUND_COLOR) # TODO: add tooltip
-        self.combo1 = sg.Combo(
-            values=self.v2_to_v1s[self.default_v2],
-            default_value=self.default_v1,
-            size=(20,3),  # TODO: change this value. not correct
-            key=self.key1,
-            enable_events=True
-        )
-        self.combo2 = sg.Combo(
-            values=self.v1_to_v2s[self.default_v1],
-            default_value=self.default_v2,
-            size=(20,3),  # TODO: change this value. not correct
-            key=self.key2,
-            enable_events=True
-        )
-        self.elements = [ self.text1, self.combo1, self.text2, self.combo2, ]
-        return
-    # Handle
-    def handle(self, **kwargs):
-        event = kwargs['event']
-        if event == self.key1:  # Update valid choices for v2
-            v1 = kwargs[self.key1]
-            v2s = self.v1_to_v2s[v1]
-            self.combo2.update(values=v2s, value=v2s[0])
-        elif event == self.key2:   # Update valid choices for v1
-            v2 = kwargs[self.key2]
-            v1s = self.v2_to_v1s[v2]
-            self.combo1.update(values=v1s, value=v1s[0])
-        return
-    # Values
-    def add_values(self, values):
-        return
-## Joined Input and Slider
-class InputSlider(AbstractElement):
-    """Input and slider connected to each other."""
-    # Constructor
-    def __init__(self, text, key, default_value=0.0, range=(0, 100), resolution=1, size_input=6, type_caster=float) -> None:
-        super().__init__()
-        # Parameters
-        self.text = text
-        self.key = key
-        self.key_input = f"{self.key}_input"
-        self.key_slider = f"{self.key}_slider"
-        self.events = {
-            self.key, self.key_input, self.key_slider
-        }
-        self.default_value = default_value
-        self.range = range
-        self.resolution = resolution
-        self.size_input = size_input
-        self.type_caster = type_caster
-        # Elements
-        self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # add tooltip `tooltip`
-        self.input = sg.Input(
-            key=self.key_input,
-            default_text=str(default_value),
-            size=self.size_input,
-            enable_events=True
-        )  # update(value = value_new)
-        self.slider = sg.Slider(
-            key=self.key_slider,
-            range=range,
-            default_value=default_value,
-            resolution=resolution,
-            orientation='h',
-            enable_events=True
-        )
-        self.elements = [self.text, self.input, self.slider]
-        return
-    # TODO
-    # - connection between `input` and `slider`
-    # Handle
-    def handle(self, **kwargs):
-        event = kwargs['event']
-        if event == self.key_input:  # Changed Input -> Reflect on Slider
-            value_input = self.type_caster( self.input.get() )
-            self.slider.update(value = value_input)
-        elif event == self.key_slider:  # Changed Slider -> Reflect on Input
-            value_slider = self.type_caster( kwargs[self.key_slider] )
-            self.input.update(value = value_slider)
-    # Values
-    def add_values(self, values):
-        values[self.key] = self.type_caster( self.input.get() )
-        return
 ## Z-Interpolation Tracking
 class ZInterpolationTracking(AbstractElement):
     # Cosntructor
@@ -917,6 +892,7 @@ class XYGamePad(AbstractElement):
     def __init__(self,
             icon_xleft, icon_xright, icon_yleft, icon_yright,
             key="xypad", input_size=5, input_bounds=(0,2048),
+            default_value = 0,
             font=(None,19),
             icon_size: Tuple[int, int] = (64, 64),
         ) -> None:
@@ -934,6 +910,8 @@ class XYGamePad(AbstractElement):
         self.key_xright = f"{self.key}_$X$$+$"
         self.key_yleft = f"{self.key}_$Y$$-$"
         self.key_yright = f"{self.key}_$Y$$+$"
+
+        self.default_value = default_value
 
         self.button_xleft = sg.Button(
             key=self.key_xleft,
@@ -961,7 +939,7 @@ class XYGamePad(AbstractElement):
         )
         self.input_as = InputAutoselect(
             key=self.key_input,
-            default_text="0",
+            default_text=str(self.default_value),
             bounds=input_bounds,
             size=input_size,
             type_caster=int,
@@ -1024,6 +1002,12 @@ class XYGamePad(AbstractElement):
         for button in self.buttons:
             button.bind('<ButtonPress>', "-Press", propagate=False)
             button.bind('<ButtonRelease>', "-Release", propagate=False)
+        return
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state( all_states )
         return
 
 ## Z Game Pad
@@ -1121,13 +1105,20 @@ class ZGamePad(AbstractElement):
             button.bind('<ButtonPress>', "-Press", propagate=False)
             button.bind('<ButtonRelease>', "-Release", propagate=False)
         return
+    def add_state(self, all_states):
+        self.input_as.add_state(all_states)
+        return
+    def load_state(self, all_states):
+        self.input_as.load_state( all_states )
+        return
 ## Folder Browser
 class FolderBrowser(AbstractElement):
     # Constructor
-    def __init__(self) -> None:
+    def __init__(self, default_path = "./") -> None:
         super().__init__()
         self.key = "data_directory"
         self.key_browser = f"{self.key}-BROWSER"
+        self.default_path = default_path
         self.folder_browser = sg.FolderBrowse(
             key=self.key_browser,
             button_text = "Browse",
@@ -1137,7 +1128,7 @@ class FolderBrowser(AbstractElement):
         )
         self.input = sg.Input(
             key = self.key,
-            default_text=r"./",
+            default_text=self.default_path,
             size=90,
             readonly=True,
             enable_events=True
@@ -1165,48 +1156,13 @@ class FolderBrowser(AbstractElement):
         return
     def get(self):
         return self.input.get()
-## Detection Model Selector
-class DetectionModelSelector(AbstractElement):
-    # Constructor
-    def __init__(self) -> None:
-        super().__init__()
-        self.key = "detection_model"
-        self.key_refresh = f"{self.key}-REFRESH"
-        self.comb
-        self.folder_browser = sg.FolderBrowse(
-            key=self.key_browser,
-            button_text = "Browse",
-            button_color=BUTTON_COLOR,
-            target = self.key,
-            initial_folder = "."
-        )
-        self.input = sg.Input(
-            key = self.key,
-            default_text=r"./",
-            size=90,
-            readonly=True,
-            enable_events=True
-        )
-        self.elements = [
-            sg.Text("Data Directory: ", s=(13), background_color = BACKGROUND_COLOR),
-            self.folder_browser,
-            self.input
-        ]
-        self.events = {
-            self.key,
-            self.key_browser
-        }
+
+    # State
+    def add_state(self, all_states):
+        all_states[self.key] = self.get()
         return
-    # Handle
-    def handle(self, **kwargs):
-        # Stop velocity
-        directory = self.get()
-        client_cli_cmd = f"DO _set_directories {directory}"
-        print(f"Executing: '{client_cli_cmd}'")
-        self.client.process(client_cli_cmd)
+    def load_state(self, all_states):
+        fp_folder = all_states[self.key]
+        self.input.update(value=fp_folder)
+        self.handle()
         return
-    def add_values(self, values):
-        values[self.key] = self.get()
-        return
-    def get(self):
-        return self.input.get()

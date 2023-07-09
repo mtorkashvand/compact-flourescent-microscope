@@ -44,6 +44,12 @@ FP_MODELS_PATHS = os.path.join(
     FP_CFM_GUI_FOLDER,
     "models_path.json"
 )
+FP_DATA_PATH = os.path.join(
+    FP_CFM_GUI_FOLDER,
+    "data"
+)
+if not os.path.exists(FP_DATA_PATH):
+    os.mkdir(FP_DATA_PATH)
 
 # Parameters
 DEBUG = False
@@ -227,6 +233,7 @@ elements.append(ui_exposure_behavior)
 ui_framerate = FramerateCompound(
     ui_exposure_behavior,
     ui_exposure_gfp,
+    framerate_default = 20,
     icon=ICON_FPS,
     icon_size=ICON_SIZE
 )
@@ -255,7 +262,9 @@ ui_zgamepad = ZGamePad(icon_zpos=ICON_Z_POS, icon_zneg=ICON_Z_NEG)
 elements.append(ui_zgamepad)
 
 
-ui_folder_browser = FolderBrowser()
+ui_folder_browser = FolderBrowser(
+    default_path = FP_DATA_PATH
+)
 elements.append(ui_folder_browser)
 
 #####################
@@ -380,9 +389,8 @@ def zero_displayers():
     window['img_frame_g'].update(data=_tmp)
     window.refresh()
 zero_displayers()
-# Display and interact with the Window using an Event Loop
-# DEBUG TODO:  change code to have different `elements`` for each functionality, e.g. like CombosJoined
 
+# Display and interact with the Window using an Event Loop
 event, values = window.read(timeout=0)
 # Binding Press/Release Buttons
 ui_xygamepad.bind()
