@@ -2,8 +2,8 @@
 
 # Getting Started
 
-- Once the installation is complete, find the OpenAutoScope2.0 icon, and to launch the software double-click on the icon.
-  The software's graphical user interface (GUI) resembles the image displayed below.
+Once the installation is complete, find the OpenAutoScope2.0 icon, and to launch the software double-click on the icon.
+The software's graphical user interface (GUI) resembles the image displayed below.
   
 <p align="center">
   <img src="https://github.com/mtorkashvand/compact-flourescent-microscope/assets/31863323/b4e17906-7630-4475-9443-ec367f55f1e9" alt="Image" width="900" height="650">
@@ -22,7 +22,7 @@ The current tracking status, indicating whether tracking is active or not, is di
 ### 3: Data Directory
 Here, you can specify the location where the log file and data are saved. It is recommended to create separate folders for each recording session.
 <a name="4"></a>
-### 4: Frame Per Second
+### 4: Imaging Frame Rate
 You can set the imaging frame rate here. The minimum and maximum allowed values are indicated in parentheses. For most behavioral experiments, a frame rate of 20Hz is sufficient.
 Keep in mind that higher frame rates will increase the size of the recorded data, and certain tracking methods may require more computational resources,
 potentially leading to tracking issues.
