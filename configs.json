@@ -1,0 +1,15 @@
+{
+    "offset_behavior_x": -14,
+    "offset_behavior_y": -44,
+    "offset_gcamp_x": -34,
+    "offset_gcamp_y": -28,
+    "exposure_gcamp": 18000,
+    "exposure_behavior": 18000,
+    "framerate": 25,
+    "tracking_model--COMBO": "YA_Plate",
+    "z_offset": 0,
+    "xypad-input": 0,
+    "zpad-input": 0,
+    "q": 0.7,
+    "data_directory": "ABSOLUTE_PATH_TO_FOLDER"
+}
