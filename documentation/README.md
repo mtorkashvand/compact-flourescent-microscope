@@ -3,9 +3,9 @@ This is to navigate to different sections of the documentation for OpenAutoScope
 installing the software, configuring the necessary parameters, performing calibration, preparing samples for optimal results, and conducting imaging sessions on the prepared samples.
 You can refer to the specific sections that align with your current needs and requirements.
 
-## Printed Circuit Board
+## [Printed Circuit Board](../pcb)
 
-The manufacturing of the printed circuit board (PCB) typically requires a certain amount of time. There are multiple vendors available, both within and outside the US, that handle PCB production. We used EasyEDA for designing the PCB and ordering it, including the soldered components. You can find all the necessary files and information required to place an order for the PCB in [here](../pcb).
+The manufacturing of the printed circuit board (PCB) typically requires a certain amount of time. There are multiple vendors available, both within and outside the US, that handle PCB production. We used EasyEDA for designing the PCB and ordering it, including the soldered components.
 
 
 ## Hardware Assembly
