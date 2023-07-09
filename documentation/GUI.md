@@ -1,5 +1,4 @@
 # Graphical User Interface (GUI)
-Once the installation is complete, find the OpenAutoScope2.0 icon, and to launch the software double-click on the icon.
 The software's graphical user interface (GUI) resembles the image displayed below.
   
 <p align="center">
