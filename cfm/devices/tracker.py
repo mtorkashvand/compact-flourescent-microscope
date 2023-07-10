@@ -213,14 +213,17 @@ class TrackerDevice():
             self.magnification, self.condition = tracking_specs.split('_', 1)
         # 4x_plate
         if self.magnification == "4x":
+            self.interpolation_tracking = False
             self.xyz4xsharpness.reset()
             self.detect = self.xyz_detection_4x
         # 10x_plate, 10x_glass
         elif self.magnification == "10x":
             self.ort_session = onnxruntime.InferenceSession(fp_model_onnx)
             if "glass" in self.condition:
+                self.interpolation_tracking = True
                 self.detect = self.xyz_detection_10x_glass
             elif "plate" in self.condition:
+                self.interpolation_tracking = False
                 self.detect = self.xyz_detection_10x_plate
             else:
                 raise NotImplemented()
@@ -335,13 +338,6 @@ class TrackerDevice():
         # PID
         ## Velocities XY
         self.vy, self.vx = self.pid_controller.get_velocity(self.y_worm, self.x_worm)
-
-        ## Velocity Z
-        if self.interpolation_tracking:
-            self.estimate_vz_by_interpolation()
-        else:
-            self.estimate_vz_by_sharpness()
-
 
         # Set Velocities
         if self.tracking:
