@@ -206,7 +206,10 @@ class TrackerDevice():
     # Detectors
     def set_tracking_system(self, tracking_specs, fp_model_onnx):
         tracking_specs = tracking_specs.lower()
-        self.magnification, self.condition = tracking_specs.split('_', 1)
+        if 'default' in tracking_specs:
+            self.magnification, self.condition = "10x", "glass"
+        else:
+            self.magnification, self.condition = tracking_specs.split('_', 1)
         # 4x_plate
         if self.magnification == "4x":
             self.xyz4xsharpness.reset()
