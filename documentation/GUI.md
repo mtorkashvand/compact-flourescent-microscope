@@ -2,7 +2,7 @@
 The software's graphical user interface (GUI) resembles the image displayed below.
   
 <p align="center">
-  <img src="https://github.com/mtorkashvand/compact-flourescent-microscope/assets/31863323/b4e17906-7630-4475-9443-ec367f55f1e9" alt="Image" width="900" height="650">
+  <img src="../images/images/gui.PNG" alt="Image" width="900" height="650">
 </p>
 
 ### 1: Recorder Toggle
