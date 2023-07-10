@@ -441,8 +441,9 @@ offset_gx = x_bound + int(values['offset_gcamp_x'])
 offset_gy = y_bound + int(values['offset_gcamp_y'])
 
 
-cfm_with_gui = run_cfm_with_gui(**values)
-cfm_with_gui.run()
+if not DEBUG:
+    cfm_with_gui = run_cfm_with_gui(**values)
+    cfm_with_gui.run()
 
 # Add some rest time for the camera to initialize so the offset would apply
 time.sleep(1)
@@ -480,6 +481,13 @@ while True:
     frame_g = cv.imencode('.png', img_g)[1].tobytes()
     window['img_frame_r'].update(data=frame_r)
     window['img_frame_g'].update(data=frame_g)
+    # DEBUG
+    if DEBUG:
+        all_states = dict()
+        for element in elements:
+            element.add_state(all_states)
+        jdump(all_states, "tmp.json")
+        break
 # Finish up by removing from the screen
 window.close()
 
