@@ -24,14 +24,7 @@ class PIDController():
         self.SPy = SPy
         self.SPx = SPx
         
-        self.Ey = 0.0
-        self.Ex = 0.0
-        
-        self.Iy = 0.0
-        self.Ix = 0.0
-
-        self.Vy = 0.0
-        self.Vx = 0.0
+        self.reset()
         return
     
     def reset(self):
