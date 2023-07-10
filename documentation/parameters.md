@@ -1,1 +1,11 @@
-here explain what each parameter does and how to change it if applicable.
+Presented below is a comprehensive list of parameters that you will encounter throughout the assembly, calibration, and utilization of OpenAutoScope 2.0. Familiarizing yourself with these parameters will greatly assist you in maximizing the system's performance capabilities.
+
+### Camera Serial Number
+This is a dual-channel system designed for simultaneous behavior recording and GCaMP recording. Essentially, this system utilizes two separate cameras, each positioned in a distinct light path. The camera located further back specifically captures light that passes through all optical components. Due to the implementation of high-pass dichroic mirrors, this camera primarily collects light with longer wavelengths. As a result, it effectively captures infrared (IR) light, which is utilized as the light source for behavior recording. This camera is referred to as the "behavior camera." On the other hand, the second camera is positioned after the 470nm light source but before the 595nm light source, earning it the designation of the "GCaMP camera". The serial number of each camera is written on its label and is also available when you open the SpinView app, under the 'Devices' panel. Make sure the correct serial numbers for each camera is recorded in the [configuration](../configs.json) file.
+
+### Camera Offset values
+The cameras used in this system have a sensor size of 1920 by 1200. To optimize signal quality and reduce file size, we implement a resolution reduction by a factor of 2 and utilize a bin size of two. As a result, the full field of view frame size becomes 960 by 600. However, due to the inherent imperfections of the system's components and the assembly process, there may be offsets in both the x and y directions between the two cameras, despite them receiving signals from the same objective. To ensure perfectly aligned frames, we use a cropped version of the frames. Specifically, from the original 960 by 600 field of view, we crop a 512 by 512 frame. By adjusting the location of these crops, we achieve the desired alignment of frames. The following cartoon shows how the full field of view and the offset parameters are related.
+
+<p align="center">
+  <img src="../images/images/offsets.PNG" alt="Image" width="900" height="650">
+</p>
