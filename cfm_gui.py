@@ -442,6 +442,9 @@ offset_gy = y_bound + int(values['offset_gcamp_y'])
 
 
 if not DEBUG:
+    # Add Configs to Overwrite when running CFM
+    for k,v in all_states:
+        values[k] = v
     cfm_with_gui = run_cfm_with_gui(**values)
     cfm_with_gui.run()
 
