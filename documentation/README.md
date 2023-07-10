@@ -8,13 +8,14 @@ You can refer to the specific sections that align with your current needs and re
 The manufacturing of the printed circuit board (PCB) typically requires a certain amount of time. There are multiple vendors available, both within and outside the US, that handle PCB production. We used EasyEDA for designing the PCB and ordering it, including the soldered components.
 
 
-## Hardware Assembly
+## [Hardware Assembly](https://drive.google.com/file/d/1PnN88vxZwhIJeRHgJQa5Ft3MLd5eSH1t/view?usp=share_link)
+The provided pdf file serves as a comprehensive construction manual for the OpenAutoScope 2.0 system. It offers a detailed, step-by-step guide for assembling the system. The list of all the necessary parts required for the assembly can be found [here](../parts/parts.pdf). Towards the final stages of the assembly process, the SpinView application is utilized to align the cameras accurately. For more information on installing the SpinView application, refer to the [installation](installation.md) section.
 
 ## Hardware Calibration
 
 ## Software Installation
 
-## [Graphical User Interface (GUI)](GUI.md)
+## [Graphical User Interface (GUI)](gui.md)
 This document provides an explanation of the various elements present in the graphical user interface (GUI) and their respective functions.
 It is assumed that you have already assembled the system before proceeding to this stage.
 
