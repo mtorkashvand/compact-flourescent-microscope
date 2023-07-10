@@ -106,6 +106,7 @@ class TrackerDevice():
         self.out = np.zeros(self.shape, dtype=self.dtype)
         self.data = np.zeros(self.shape)
         # y is the first index and x is the second index in the image
+        self.detect = lambda img: img
         self.xyz4xsharpness = XYZ4xSharpness(tracker=self)
         self.y_worm = self.shape[0]//2
         self.x_worm = self.shape[1]//2
@@ -279,7 +280,7 @@ class TrackerDevice():
         ################################################################################
         # Detect Z Velocity
         self.vz = None
-        return
+        return img_annotated
 
     def process(self):
         """This processes the incoming images and sends move commands to zaber."""
