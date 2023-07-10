@@ -16,7 +16,7 @@ The provided pdf file serves as a comprehensive construction manual for the Open
 This document provides an explanation of the various elements present in the graphical user interface (GUI) and their respective functions.
 It is assumed that you have already assembled the system before proceeding to this stage.
 
-## Motion Control With The Xbox Controller
+
 
 ## Parameters
 
@@ -25,7 +25,8 @@ It is assumed that you have already assembled the system before proceeding to th
 ## [Sample Preparation](sample_preparation.md)
 The purpose of the protocol is to ensure optimal performance of the tracking algorithm by emphasizing the importance of sample preparation. To achieve precise z tracking during imaging and effectively image single neurons, it is recommended to prepare the sample on glass. For improved tracking accuracy, it is advised to prepare agar plates with a low peptone percentage and seed them with a small amount of OP50 close to the experiment's execution, minimizing food residues in the recordings. Additionally, creating thin agar plates and utilizing agarose or noble agar enhances sample transparency, thereby increasing the signal-to-noise ratio in the recordings.
 
-
+## [Motion Control With The Xbox Controller](xbox_controller.md)
+This explains how you can utilize an Xbox controller to easily move the stage and find the sample and focus on it.
 
 
 
