@@ -1,8 +1,8 @@
 # OpenAutoScope2.0
 
-Take a nice picture of the setup and add it here
-
-
+<p align="center">
+  <img src="images/images/OpenAutoScope.png" alt="Image" width="595" height="495">
+</p>
 
 # About
 
