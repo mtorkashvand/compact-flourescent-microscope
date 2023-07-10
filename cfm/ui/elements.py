@@ -733,8 +733,8 @@ class ModelsCombo(AbstractElement):
         # Elements
         self.text = sg.Text(text, background_color = BACKGROUND_COLOR)  # TODO: add tooltip
         self.combo = sg.Combo(
-            values=["No Models Loaded"] if default_value is None else [default_value],
-            default_value="No Models Loaded" if default_value is None else default_value,
+            values=["10x_default_all"] if default_value is None else [default_value],
+            default_value="10x_default_all" if default_value is None else default_value,
             key=self.key_combo,
             enable_events=True,
             s=25,
@@ -746,9 +746,10 @@ class ModelsCombo(AbstractElement):
     def _load_models(self):
         # TODO: load models each time the combo is selected or in some other way
         self.model_paths = jload( self.fp_models_paths )
+        values = list(self.model_paths)
         print(self.model_paths)
         self.combo.update(
-            values=list(self.model_paths), value=list(self.model_paths)[0]
+            values=values, value=values[0]
         )
         return
 

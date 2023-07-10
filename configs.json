@@ -11,5 +11,5 @@
     "xypad-input": 0,
     "zpad-input": 0,
     "q": 0.7,
-    "data_directory": "C:\\src\\compact-flourescent-microscope\\data"
+    "data_directory": "./data"
 }
