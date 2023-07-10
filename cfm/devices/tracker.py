@@ -43,7 +43,7 @@ import numpy as np
 from docopt import docopt
 from cfm.devices.pid_controller import PIDController
 from cfm.devices.tracker_tools import (
-    minmax, merge_rectangles, XYTrackerRatio
+    XYZ4xSharpness
 )
 
 from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
@@ -93,8 +93,6 @@ class TrackerDevice():
         self.curr_point = np.zeros(3)
         self.N = np.zeros(3) * np.nan
         self.isN = False
-        ## Tracker Class
-        self.xytracker = XYTrackerRatio(tracker = self)
         
 
         np.seterr(divide = 'ignore')
@@ -108,6 +106,7 @@ class TrackerDevice():
         self.out = np.zeros(self.shape, dtype=self.dtype)
         self.data = np.zeros(self.shape)
         # y is the first index and x is the second index in the image
+        self.xyz4xsharpness = XYZ4xSharpness(tracker=self)
         self.y_worm = self.shape[0]//2
         self.x_worm = self.shape[1]//2
         self.pid_controller = PIDController(Kpy=15, Kpx=15, Kiy=0, Kix=0, Kdy=0, Kdx=0, SPy=self.shape[0]//2, SPx=self.shape[1]//2)
@@ -204,121 +203,32 @@ class TrackerDevice():
         self.curr_point[:] = [x, y, z]
         self.send_log(f"received position ({x},{y},{z})")
 
-    def detect_using_XY_tracker(self, img):
-        img_size = img.size
-        ### y is the first index and x is the second index in the image
-        ny, nx = img.shape[:2]
-        
-        ## Find Objects
-        img_mask_objects = self.xytracker.img_to_objects_mask(img)
-        ## Worm(s)/Egg(s) Mask
-        _ys, _xs = np.where(~img_mask_objects)
-        img_mask_worms = img_mask_objects
-        _, labels, rectangles, centroids = cv.connectedComponentsWithStats(
-            img_mask_worms.astype(np.uint8)
-        )  # output: num_labels, labels, stats, centroids
-        centroids = centroids[:,::-1]  # convert to ij -> xy
-        # Merge Overlaping or Close Rectangles
-        rectangles = rectangles[
-            rectangles[:,-1] >= self.SMALLES_TRACKING_OBJECT
-        ]  # DEBUG disabling small rectangles
-        labels, rectangles_merged, centroids = merge_rectangles(
-            labels, rectangles,
-            threshold_ratio_overlap=0.1, threshold_distance=30
-        )
-        labels_background = set(labels[_xs, _ys])  # labels of background in worm compoenents
-        label_values, label_counts = np.unique(labels.flatten(), return_counts=True)
-        candidates_info = []
-        for label_value, label_count, centroid in zip(label_values, label_counts, centroids):
-            # Skip Background's Connected Component
-            if label_value in labels_background:
-                continue
-            # If around the size of a worm
-            pixel_ratio = label_count / img_size
-            ## TODO: double check if previous condition works better of this one
-            ## pixel_ratio <= self.PIXEL_RATIO_WORM_MAX and label_count >= self.SMALLES_TRACKING_OBJECT
-            if label_count >= self.SMALLES_TRACKING_OBJECT:
-                candidates_info.append([
-                    labels == label_value,
-                    centroid
-                ])
-        ## Select Worm from Candidates
-        self.found_trackedworm = False
-        img_mask_trackedworm = None
-        idx_closest = None
-        _d_center_closest = None
-        if len(candidates_info) > 0:
-            _center_previous = self.trackedworm_center \
-                if self.tracking and self.trackedworm_center is not None else np.array([nx/2, ny/2])
-            _size_lower = self.trackedworm_size*(1.0-self.TRACKEDWORM_SIZE_FLUCTUATIONS) if self.tracking and self.trackedworm_size is not None else 0.0
-            _size_upper = self.trackedworm_size*(1.0+self.TRACKEDWORM_SIZE_FLUCTUATIONS) if self.tracking and self.trackedworm_size is not None else 0.0
-            for idx, (mask, center) in enumerate(candidates_info):
-                # Candidate Info
-                _size = mask.sum()
-                _d_center = np.max(np.abs(center - _center_previous))
-                # Check Distance (center of image or worm if tracked)
-                is_close_enough = _d_center <= self.TRACKEDWORM_CENTER_SPEED
-                # Check Size if Tracked a Worm
-                if _size_upper != 0.0:
-                    is_close_enough = is_close_enough and (_size_lower <= _size <= _size_upper)
-                # If Close Enough
-                if is_close_enough:
-                    self.found_trackedworm = True
-                    if _d_center_closest is None or _d_center < _d_center_closest:
-                        idx_closest = idx
-                        _d_center_closest = _d_center
-                        img_mask_trackedworm = mask
-                        if self.tracking:
-                                self.trackedworm_size = _size
-                                self.trackedworm_center = center.copy()
-            return
-
-        # Visualize Informations
-        img_annotated = img.copy()
-
-        # if self.data_publisher_debug is not None:
-        #     img_debug = img_mask_objects.astype(np.uint8)*255
-        #     self.data_publisher_debug.send(img_debug)
-        
-
-        # Worm Mask
-        if self.found_trackedworm:
-            ## Extend Worm Boundary
-            img_mask_trackedworm_blurred = cv.blur(
-                img_mask_trackedworm.astype(np.float32),
-                (self.MASK_KERNEL_BLUR, self.MASK_KERNEL_BLUR)
-            ) > 1e-4
-            xs, ys = np.where(img_mask_trackedworm_blurred)
-            x_min, x_max = minmax(xs)
-            y_min, y_max = minmax(ys)
-            self.img_trackedworm_cropped = img[
-                x_min:(x_max+1),
-                y_min:(y_max+1)
-            ]
-            self.x_worm = (x_min + x_max)//2
-            self.y_worm = (y_min + y_max)//2
-
-            # Z Calculations
-            self.shrp_hist[self.shrp_idx] = self.calc_img_sharpness(
-                self.img_trackedworm_cropped
-            )
-        else:
-            self.x_worm, self.y_worm = None, None
-            self.img_trackedworm_cropped = None
-            self.vz = None
-
-        return img_annotated
-
-    def set_onnxmodel_path(self, fp_onnx):
-        self.ort_session = onnxruntime.InferenceSession(fp_onnx)
+    # Detectors
+    def set_tracking_system(self, tracking_specs, fp_model_onnx):
+        tracking_specs = tracking_specs.lower()
+        self.magnification, self.condition = tracking_specs.split('_', 1)
+        # 4x_plate
+        if self.magnification == "4x":
+            self.xyz4xsharpness.reset()
+            self.detect = self.xyz_detection_4x
+        # 10x_plate, 10x_glass
+        elif self.magnification == "10x":
+            self.ort_session = onnxruntime.InferenceSession(fp_model_onnx)
+            if self.condition == "glass":
+                self.detect = self.xyz_detection_10x_glass
+            elif self.condition == "plate":
+                self.detect = self.xyz_detection_10x_plate
+            else:
+                raise NotImplemented()
         return
-
-    def detect_using_NNModel(self, img):
-
+    def xyz_detection_4x(self, img):
+        img_annotated = self.xyz4xsharpness.detect(img)
+        return img_annotated
+    def xyz_detection_10x_glass(self, img):
+        ################################################################################
+        # Detect X-Y Coordinates
         self.found_trackedworm = True
-        self.idx_detector_send += 1
         self.vz = None
-
         ## Detect using Model
         if self.ort_session is not None:
             img_cropped = img[56:-56,56:-56]
@@ -336,12 +246,37 @@ class TrackerDevice():
         img_annotated = img.copy()
         img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=255, thickness=2)
         img_annotated = cv.circle(img_annotated, (256, 256), radius=2, color=255, thickness=2)  # Center of image
-
-        # if self.data_publisher_debug is not None:
-        #     img_debug = img_annotated
-        #     self.data_publisher_debug.send(img_debug)
-
+        ################################################################################
+        # Detect Z Velocity
+        self.estimate_vz_by_interpolation()
+        # Return
         return img_annotated
+    def xyz_detection_10x_plate(self, img):
+        ################################################################################
+        # Detect X-Y Coordinates
+        self.found_trackedworm = True
+        self.vz = None
+        ## Detect using Model
+        if self.ort_session is not None:
+            img_cropped = img[56:-56,56:-56]
+            batch_1_400_400 = {
+                'input': np.repeat(
+                    img_cropped[None, None, :, :], 3, 1
+                ).astype(np.float32)
+            }
+            ort_outs = self.ort_session.run( None, batch_1_400_400 )
+            self.y_worm, self.x_worm = ort_outs[0][0].astype(np.int64) + 56
+        else:  # No ORT Session
+            self.y_worm, self.x_worm = self.shape[0]//2, self.shape[1]//2
+
+        # Visualize Informations
+        img_annotated = img.copy()
+        img_annotated = cv.circle(img_annotated, (int(self.y_worm), int(self.x_worm)), radius=10, color=255, thickness=2)
+        img_annotated = cv.circle(img_annotated, (256, 256), radius=2, color=255, thickness=2)  # Center of image
+        ################################################################################
+        # Detect Z Velocity
+        self.vz = None
+        return
 
     def process(self):
         """This processes the incoming images and sends move commands to zaber."""
@@ -363,9 +298,9 @@ class TrackerDevice():
         # Find Worm
         img = self.data
 
-        # img_annotated = self.detect_using_XY_tracker(img)
-        img_annotated = self.detect_using_NNModel(img)
-        
+        # Track X-Y-Z
+        img_annotated = self.detect(img)
+
         # Behavior Displayer
         self.data_publisher.send(img_annotated)
 
@@ -459,22 +394,6 @@ class TrackerDevice():
         self.tracking = False
         self.pid_controller.reset()
 
-
-    def set_shape(self, y ,x):
-        self.poller.unregister(self.data_subscriber.socket)
-
-        self.shape = (y, x)
-        self.tracker.set_shape(y, x)
-        self.out = np.zeros(self.shape, dtype=self.dtype)
-
-        self.data_subscriber.set_shape(self.shape)
-        self.data_publisher.set_shape(self.shape)
-        # if self.data_publisher_debug is not None and self.name != "tracker_gcamp" :
-        #     self.data_publisher_debug.set_shape(self.shape)
-
-        self.poller.register(self.data_subscriber.socket, zmq.POLLIN)
-        self.publish_status()
-
     def shutdown(self):
         """Shutdown the tracking device."""
         self.send_log("shutdown command received")
@@ -517,7 +436,6 @@ class TrackerDevice():
         self.send_log({
             self.name: self.status
         })
-        # self.command_publisher.send("logger " + json.dumps({self.name: self.status}, default=int))
 
     def run(self):
         """This subscribes to images and adds time stamp
@@ -543,113 +461,11 @@ class TrackerDevice():
                     # self.print(msg)
                     self.send_log(msg)
                 self.debug_idx = (self.debug_idx+1)%self.debug_T
-    
-    # Processing Methods
-    def calc_line_sharpness(self, arr1d):
-        i_min, i_max = np.argmin(arr1d), np.argmax(arr1d)
-        v_min, v_max = arr1d[i_min], arr1d[i_max]
-        il, ir = (i_min, i_max) if i_min <= i_max else (i_max, i_min)
-        if v_max == v_min:
-            return np.nan
-        values = (arr1d[il:(ir+1)] - v_min)/(v_max - v_min)
-        shrp = np.sum( np.diff(values)**2 )
-        return shrp
-
-    def calc_horizontal_sharpness(self, img, x, points, points_extended):
-        # Slice Bounds
-        y_min, y_max = minmax(points[1][
-            points[0] == x
-        ])
-        y_ext_min, y_ext_max = minmax(points_extended[1][
-            points_extended[0] == x
-        ])
-        # Enough Points
-        if y_max - y_min <= self.SHARPNESS_MIN_LENGTH:
-            return np.nan
-        # Sharpnesses
-        shrp1 = self.calc_line_sharpness(img[
-            x, y_ext_min:(y_min+1+self.SHARPNESS_PADDING)
-        ])
-        shrp2 = self.calc_line_sharpness(img[
-            x, (y_max-self.SHARPNESS_PADDING):(y_ext_max+1)
-        ])
-        shrp = (shrp1+shrp2)/2
-        # Return
-        return shrp
-
-    def calc_vertical_sharpness(self, img, y, points, points_extended):
-        # Slice Bounds
-        x_min, x_max = minmax(points[0][
-            points[1] == y
-        ])
-        x_ext_min, x_ext_max = minmax(points_extended[0][
-            points_extended[1] == y
-        ])
-        # Enough Points
-        if x_max - x_min <= self.SHARPNESS_MIN_LENGTH:
-            return np.nan
-        # Sharpnesses
-        shrp1 = self.calc_line_sharpness(img[
-            x_ext_min:(x_min+1+self.SHARPNESS_PADDING), y
-        ])
-        shrp2 = self.calc_line_sharpness(img[
-            (x_max-self.SHARPNESS_PADDING):(x_ext_max+1), y
-        ])
-        shrp = (shrp1+shrp2)/2
-        # Return
-        return shrp
-
-    def calc_img_sharpness(self, img):
-        # Threshold and Blur
-        # DEBUG TODO: change these calls to 'self.MASK_WORM_THRESHOLD' and 'self.MASK_WORM_THRESHOLD_BLURED'
-        # since they are now being dynamically changed -> previously they were constant
-        img_thrshld = img <= self.MASK_WORM_THRESHOLD
-        img_thrshld_medblur = cv.medianBlur(
-            img, self.MASK_MEDIAN_BLUR
-        ) <= (self.MASK_WORM_THRESHOLD_BLURED)
-        # Mask and Extentsion
-        img_mask = img_thrshld & img_thrshld_medblur
-        img_mask_extended = cv.blur(
-            img_thrshld_medblur.astype(np.float32),
-            (self.MASK_KERNEL_BLUR, self.MASK_KERNEL_BLUR)
-        ) > 0
-        # Points
-        xs, ys = np.where(img_mask)
-        xs_unique, ys_unique = np.unique(xs), np.unique(ys)
-        points = np.array([xs,ys])
-        points_extended = np.array(np.where(img_mask_extended))
-        # Empty
-        if len(points) == 0 or len(points_extended) == 0:
-            print(f"<{self.name}>@ZERO POINTS")
-            return np.nan
-        # Sharpness
-        samples_x = np.random.choice(xs_unique, size=self.SHRPNESS_SAMPLES, replace=False) \
-            if self.SHRPNESS_SAMPLES < len(xs_unique) else xs_unique
-        shrpn_x_avg = np.nanmean([
-            self.calc_horizontal_sharpness(
-                img,
-                x,
-                points, points_extended
-            ) for x in samples_x
-        ])
-        samples_y = np.random.choice(ys_unique, size=self.SHRPNESS_SAMPLES, replace=False) \
-            if self.SHRPNESS_SAMPLES < len(ys_unique) else ys_unique
-        shrpn_y_avg = np.nanmean([  # TODO: This gives warning!!!
-            self.calc_vertical_sharpness(
-                img,
-                y,
-                points, points_extended
-            ) for y in samples_y
-        ])
-        shrp = (shrpn_x_avg+shrpn_y_avg)/2
-        # Return
-        return shrp
-    
     # Print
     def print(self, msg):
         print(f"<{self.name}>@ {msg}")
         return
-    
+
     # Set Velocities
     def set_velocities(self, vx, vy, vz):
         if vx is not None:
@@ -662,28 +478,7 @@ class TrackerDevice():
         self.get_curr_pos()
         return
 
-    # Estimate Vz by Sharpness
-    def estimate_vz_by_sharpness(self):
-        if self.shrp_idx == (self.shrp_hist_size-1):
-            # Coarse Sharpness Change
-            _n = self.shrp_hist_size//2
-            shrp_old = np.nanmean(self.shrp_hist[:_n])
-            shrp_new = np.nanmean(self.shrp_hist[_n:])
-            # Stop or Move
-            if np.isnan(shrp_old) or np.isnan(shrp_new) or self.vz is None:
-                self.vz = 0
-            elif self.vz == 0:
-                self.vz = self.VZ_MAX
-            elif shrp_old > shrp_new:
-                self.vz = -self.vz
-            # Shift New to Old
-            self.shrp_hist[:_n] = self.shrp_hist[_n:]
-            self.shrp_idx = _n
-            # DEBUG
-            # self.print(f"Sharpness Old/New: {shrp_old:>6.4f}/{shrp_new:>6.4f}, vz: {self.vz}")
-        else:
-            self.shrp_idx += 1
-        return
+    
 
 def main():
     """Create and start auto tracker device."""
