@@ -139,13 +139,6 @@ class TrackerDevice():
             bound=self.data_out[2],
             shape=self.shape,
             datatype=self.dtype)
-        
-        # self.data_publisher_debug = TimestampedPublisher(
-        #     host=self.data_out_debug[0],
-        #     port=self.data_out_debug[1],
-        #     bound=self.data_out_debug[2],
-        #     shape=self.shape,
-        #     datatype=self.dtype) if self.data_out_debug is not None and self.name != "tracker_gcamp" else None
 
         self.command_subscriber = ObjectSubscriber(
             obj=self,
@@ -166,18 +159,6 @@ class TrackerDevice():
 
         time.sleep(1)
         self.publish_status()
-
-        # DEBUG
-        self.debug_T = 15*5*2
-        self.debug_idx = 0
-        self.debug_durations = np.zeros(self.debug_T)
-        if self.interpolation_tracking:
-            self.print(f"\n{type(self.interpolation_tracking)}\n")
-            self.print(f"\n{self.interpolation_tracking}\n")
-            self.print("\nTRACKING BY INTERPOLATION\n")
-        self.idx_detector_send = 0
-        self.idx_detector_receive = 0
-    
 
     def set_point(self, i):
         self.command_publisher.send(f"teensy_commands get_pos {self.name} {i}")
@@ -290,12 +271,7 @@ class TrackerDevice():
                         if self.tracking:
                                 self.trackedworm_size = _size
                                 self.trackedworm_center = center.copy()
-        if self.debug_idx == 0:
-            # self.print('\n\n###')
-            # self.print(f"Mode Pixel: {find_mode_pixel(img)}")
-            # self.print(f"Number of candidates: {len(candidates_info)}")
-            # self.print(str(candidates_info))
-            pass
+            return
 
         # Visualize Informations
         img_annotated = img.copy()
@@ -471,10 +447,7 @@ class TrackerDevice():
         self.trackedworm_center = None
         self.trackedworm_size = None
         self.tracking = True
-        self.pid_controller.Ix = 0
-        self.pid_controller.Iy = 0
-        self.pid_controller.Ex = 0
-        self.pid_controller.Ey = 0
+        self.pid_controller.reset()
 
     def stop(self):
         if self.tracking:
@@ -484,10 +457,7 @@ class TrackerDevice():
         self.trackedworm_center = None
         self.trackedworm_size = None
         self.tracking = False
-        self.pid_controller.Ix = 0
-        self.pid_controller.Iy = 0
-        self.pid_controller.Ex = 0
-        self.pid_controller.Ey = 0
+        self.pid_controller.reset()
 
 
     def set_shape(self, y ,x):

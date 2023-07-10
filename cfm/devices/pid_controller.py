@@ -32,6 +32,18 @@ class PIDController():
 
         self.Vy = 0.0
         self.Vx = 0.0
+        return
+    
+    def reset(self):
+        self.Ey = 0.0
+        self.Ex = 0.0
+        
+        self.Iy = 0.0
+        self.Ix = 0.0
+
+        self.Vy = 0.0
+        self.Vx = 0.0
+        return
 
     def get_velocity(self, y, x):
 
