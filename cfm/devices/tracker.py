@@ -30,7 +30,6 @@ Options:
 """
 
 # Modules
-from __future__ import annotations
 import time
 import json
 from typing import Tuple
@@ -122,6 +121,7 @@ class TrackerDevice():
         ## Tracked Worm Info
         self.trackedworm_size = None
         self.trackedworm_center = None
+        self.found_trackedworm = False
 
         self.tracking = False
         self.running = True
@@ -449,18 +449,8 @@ class TrackerDevice():
                 self.command_subscriber.handle()
 
             elif self.data_subscriber.socket in sockets:
-                # DEBUG
-                _debug_start = time.time()
                 # Process
                 self.process()
-                # DEBUG
-                self.debug_durations[self.debug_idx] = time.time() - _debug_start
-                if self.debug_idx >= (self.debug_T-1):
-                    _debug_avg = self.debug_durations.mean()*1000
-                    msg = f"Average Process Time: {_debug_avg:>6.4f}"
-                    # self.print(msg)
-                    self.send_log(msg)
-                self.debug_idx = (self.debug_idx+1)%self.debug_T
     # Print
     def print(self, msg):
         print(f"<{self.name}>@ {msg}")

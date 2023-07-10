@@ -1,10 +1,7 @@
 # Modules
-from __future__ import annotations
 import numpy as np
 
 import cv2 as cv
-
-from cfm.devices.tracker import TrackerDevice
 
 # Methods
 ## Array Min-Max
@@ -95,7 +92,7 @@ def merge_rectangles(labels, rectangles, threshold_ratio_overlap=0.10, threshold
 ## XYZ 4x Sharpness
 class XYZ4xSharpness:
     # Constructor
-    def __init__(self, tracker: TrackerDevice) -> None:
+    def __init__(self, tracker) -> None:
         self.tracker = tracker
         self.PIXELS_MODE = 140
         self.DEVIATION_RATIO_THRESHOLD = 0.3
