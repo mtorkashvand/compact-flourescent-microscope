@@ -214,9 +214,9 @@ class TrackerDevice():
         # 10x_plate, 10x_glass
         elif self.magnification == "10x":
             self.ort_session = onnxruntime.InferenceSession(fp_model_onnx)
-            if self.condition == "glass":
+            if "glass" in self.condition:
                 self.detect = self.xyz_detection_10x_glass
-            elif self.condition == "plate":
+            elif "plate" in self.condition:
                 self.detect = self.xyz_detection_10x_plate
             else:
                 raise NotImplemented()

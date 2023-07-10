@@ -757,8 +757,9 @@ class ModelsCombo(AbstractElement):
     def handle(self, **kwargs):
         event = kwargs['event']
         if event == self.key_combo:
-            fp_model = self.model_paths[self.get()]
-            client_cli_cmd = "DO _tracker_set_onnxmodel_path {}".format(fp_model)
+            key = self.get()
+            fp_model = self.model_paths[key]
+            client_cli_cmd = "DO _tracker_set_tracking_system {} {}".format(key, fp_model)
             print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
