@@ -211,7 +211,7 @@ class WormTrackerHub(Hub):
         self.send("teensy_commands disable")
 
     def _tracker_set_onnxmodel_path(self, fp_model):
-        self.send("tracker_behavior set_onnxmodel_path {fp_model}")
+        self.send(f"tracker_behavior set_onnxmodel_path {fp_model}")
 
     def duration(self, sec):
         # TODO: separate functions for cameras?

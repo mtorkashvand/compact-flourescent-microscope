@@ -40,7 +40,6 @@ import onnxruntime
 import zmq
 import cv2 as cv
 import numpy as np
-from cfm.model.ort_loader import load_ort
 from docopt import docopt
 from cfm.devices.pid_controller import PIDController
 
