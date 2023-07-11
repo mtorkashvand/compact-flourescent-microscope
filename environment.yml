@@ -51,7 +51,6 @@ dependencies:
       - protobuf==4.23.4
       - pyreadline3==3.4.1
       - pyserial==3.5
-      - spinnaker-python==3.1.0.79
       - sympy==1.12
       - tqdm==4.65.0
       - xinput-python==0.4.0
