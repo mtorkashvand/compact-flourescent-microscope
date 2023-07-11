@@ -70,13 +70,14 @@ This file provides a comprehensive guide for the step-by-step installation of al
 ## Arduino Software
  - Visit [Arduino](https://support.arduino.cc/hc/en-us/articles/360019833020-Download-and-install-Arduino-IDE) and download the latest release for Windows
  - Run the installer and follow on-screen steps to complete the installation.
- - Run arduino and select "Install" when asked to install arduino usb driver.
+ - Run arduino and select "Install" if asked to install "Arduino USB Driver".
  - Go to File -> Preferences and add the following to the 'Additional boards manager URLs':
    ```
    https://www.pjrc.com/teensy/package_teensy_index.json
    ```
  - Go to Tools -> Board -> Boards Manager, and search for 'Teensy' and install 'Teensy by Paul Stoffregen'
- - Go to File -> Open, and open the arduino code in the cloned repository `OpenAutoScope-v2/cfm/teensy/TeensyController/TeensyController.ino`
+ - Go to File -> Open, and open the arduino code in the cloned repository:  
+   `c:/src/OpenAutoScope-v2/cfm/teensy/TeensyController/TeensyController.ino`
  - Go to Tools -> Port, and under 'teensy ports' select the connected teensy port.  
    Note: Write down the port number 'COM#', you will need it later.
  - Go to Tools -> Board -> Teensy, and select the teensy board type.
