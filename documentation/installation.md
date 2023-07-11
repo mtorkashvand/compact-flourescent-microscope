@@ -71,7 +71,7 @@ This file provides a comprehensive guide for the step-by-step installation of al
 ## Arduino Software
  - Visit [Arduino](https://support.arduino.cc/hc/en-us/articles/360019833020-Download-and-install-Arduino-IDE) and download the latest release for Windows
  - Run the installer and follow on-screen steps to complete the installation.
- - Run arduino and select "Install" if asked to install "Arduino USB Driver".
+ - Run 'Arduino IDE', and select "Install" if asked to install "Arduino USB Driver".
  - Go to File -> Preferences and add the following to the 'Additional boards manager URLs':
    ```
    https://www.pjrc.com/teensy/package_teensy_index.json
