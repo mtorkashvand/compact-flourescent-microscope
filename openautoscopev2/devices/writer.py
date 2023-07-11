@@ -37,13 +37,13 @@ import time
 import zmq
 from docopt import docopt
 
-from cfm.writers.array_writer import TimestampedArrayWriter
-from cfm.zmq.array import TimestampedSubscriber
-from cfm.zmq.subscriber import ObjectSubscriber
-from cfm.zmq.publisher import Publisher
-from cfm.devices.utils import make_timestamped_filename
-from cfm.zmq.utils import parse_host_and_port
-from cfm.devices.utils import array_props_from_string
+from openautoscopev2.writers.array_writer import TimestampedArrayWriter
+from openautoscopev2.zmq.array import TimestampedSubscriber
+from openautoscopev2.zmq.subscriber import ObjectSubscriber
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.devices.utils import make_timestamped_filename
+from openautoscopev2.zmq.utils import parse_host_and_port
+from openautoscopev2.devices.utils import array_props_from_string
 
 class  WriteSession(multiprocessing.Process):
     """This is hdf_writer class"""

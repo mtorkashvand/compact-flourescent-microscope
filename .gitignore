@@ -3,15 +3,5 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Icons
-cfm/icons/icons.py
-
 # Jupyter
 .ipynb_checkpoints/
-
-# Data
-*.onnx
-*.zip
-
-# Network
-network/

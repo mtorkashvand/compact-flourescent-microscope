@@ -11,7 +11,7 @@ from typing import Tuple, Optional
 import zmq
 import numpy as np
 
-from cfm.zmq.utils import (
+from openautoscopev2.zmq.utils import (
     get_last,
     push_timestamp,
     pop_timestamp)

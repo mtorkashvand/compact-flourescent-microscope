@@ -27,8 +27,8 @@ import time
 
 from docopt import docopt
 
-from cfm.zmq.hub import Hub
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.hub import Hub
+from openautoscopev2.zmq.utils import parse_host_and_port
 
 class WormTrackerHub(Hub):
     """This is a central hub that is responsible for subscribing and publishing

@@ -77,7 +77,7 @@ This file provides a comprehensive guide for the step-by-step installation of al
    ```
  - Go to Tools -> Board -> Boards Manager, and search for 'Teensy' and install 'Teensy by Paul Stoffregen'
  - Go to File -> Open, and open the arduino code in the cloned repository:  
-   `c:/src/OpenAutoScope-v2/cfm/teensy/TeensyController/TeensyController.ino`
+   `c:/src/OpenAutoScope-v2/openautoscopev2/teensy/TeensyController/TeensyController.ino`
  - Go to Tools -> Port, and under 'teensy ports' select the connected teensy port.  
    Note: Write down the port number 'COM#', you will need it later.
  - Go to Tools -> Board -> Teensy, and select the teensy board type.

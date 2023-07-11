@@ -30,9 +30,9 @@ from typing import Tuple
 import zmq
 from docopt import docopt
 
-from cfm.zmq.publisher import Publisher
-from cfm.zmq.subscriber import Subscriber, ObjectSubscriber
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.zmq.subscriber import Subscriber, ObjectSubscriber
+from openautoscopev2.zmq.utils import parse_host_and_port
 
 class XboxStageCommands():
 
@@ -53,7 +53,7 @@ class XboxStageCommands():
             commands[1],
             commands[0],
             commands[2],
-            name = "commands"  # TODO: change this hard coded name -> also in `cfm_with_gui.py`
+            name = "commands"  # TODO: change this hard coded name -> also in `oas.py`
         )
 
 

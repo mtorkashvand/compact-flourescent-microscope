@@ -7,28 +7,28 @@ requirements = [
 ]
 
 console_scripts = [
-    'cfm_hub=cfm.devices.hub_relay:main',
-    'cfm_forwarder=cfm.zmq.forwarder:main',
-    'cfm_processor=cfm.devices.processor:main',
-    'cfm_commands=cfm.devices.commands:main',
-    'flir_camera=cfm.devices.flir_camera:main',
-    'cfm_data_hub=cfm.devices.data_hub:main',
-    'cfm_writer=cfm.devices.writer:main',
-    'cfm_logger=cfm.devices.logger:main',
-    'cfm_tracker=cfm.devices.tracker:main',
-    'cfm_teensy_commands=cfm.devices.teensy_commands:main',
+    'oas_hub=openautoscopev2.devices.hub_relay:main',
+    'oas_forwarder=openautoscopev2.zmq.forwarder:main',
+    'oas_processor=openautoscopev2.devices.processor:main',
+    'oas_commands=openautoscopev2.devices.commands:main',
+    'flir_camera=openautoscopev2.devices.flir_camera:main',
+    'oas_data_hub=openautoscopev2.devices.data_hub:main',
+    'oas_writer=openautoscopev2.devices.writer:main',
+    'oas_logger=openautoscopev2.devices.logger:main',
+    'oas_tracker=openautoscopev2.devices.tracker:main',
+    'oas_teensy_commands=openautoscopev2.devices.teensy_commands:main',
     
 ]
 
 setuptools.setup(
-    name="cfm",
+    name="oas",
     version="0.1.0",
     author="Mahdi Torkashvand, Sina Rasouli",
     author_email="mmt.mahdi@gmail.com, rasoolibox193@gmail.com",
-    description="Software to operate compact fluorescent microscope (CFM).",
-    url="https://github.com/mtorkashvand/compact-flourescent-microscope",
+    description="Software to operate OpenAutoscope-v2",
+    url="https://github.com/venkatachalamlab/OpenAutoScope-v2",
     project_urls={
-        "Bug Tracker": "https://github.com/mtorkashvand/compact-flourescent-microscope/issues",
+        "Bug Tracker": "https://github.com/venkatachalamlab/OpenAutoScope-v2/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -38,6 +38,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': console_scripts
     },
-    packages=['cfm'],
+    packages=['oas'],
     python_requires=">=3.6",
 )

@@ -40,16 +40,16 @@ import zmq
 import cv2 as cv
 import numpy as np
 from docopt import docopt
-from cfm.devices.pid_controller import PIDController
-from cfm.devices.tracker_tools import (
+from openautoscopev2.devices.pid_controller import PIDController
+from openautoscopev2.devices.tracker_tools import (
     XYZ4xSharpness
 )
 
-from cfm.zmq.array import TimestampedSubscriber, TimestampedPublisher
-from cfm.zmq.publisher import Publisher
-from cfm.zmq.subscriber import ObjectSubscriber
-from cfm.zmq.utils import parse_host_and_port
-from cfm.devices.utils import array_props_from_string
+from openautoscopev2.zmq.array import TimestampedSubscriber, TimestampedPublisher
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.zmq.subscriber import ObjectSubscriber
+from openautoscopev2.zmq.utils import parse_host_and_port
+from openautoscopev2.devices.utils import array_props_from_string
 
 ## TrackerDevice
 class TrackerDevice():

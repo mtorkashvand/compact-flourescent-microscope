@@ -17,7 +17,7 @@ Options:
 import zmq
 from docopt import docopt
 
-from cfm.zmq.utils import (
+from openautoscopev2.zmq.utils import (
     coerce_string,
     coerce_bytes,
     try_num

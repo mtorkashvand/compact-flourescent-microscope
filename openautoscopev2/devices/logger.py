@@ -23,8 +23,8 @@ import time
 import zmq
 from docopt import docopt
 
-from cfm.zmq.utils import get_last
-from cfm.devices.utils import make_timestamped_filename
+from openautoscopev2.zmq.utils import get_last
+from openautoscopev2.devices.utils import make_timestamped_filename
 
 class Logger():
     """This is logger operating on a TCP socket."""

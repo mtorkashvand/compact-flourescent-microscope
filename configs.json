@@ -6,7 +6,6 @@
     "exposure_gcamp": 18000,
     "exposure_behavior": 18000,
     "framerate": 25,
-    "tracking_model--COMBO": "10x_default_all",
     "z_offset": 0,
     "xypad-input": 0,
     "zpad-input": 0,

@@ -21,9 +21,9 @@ import numpy as np
 from serial import Serial
 from docopt import docopt
 
-from cfm.zmq.publisher import Publisher
-from cfm.zmq.subscriber import ObjectSubscriber
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.zmq.subscriber import ObjectSubscriber
+from openautoscopev2.zmq.utils import parse_host_and_port
 
 class TeensyCommandsDevice():
     """This device sends serial commands to the teensy board."""

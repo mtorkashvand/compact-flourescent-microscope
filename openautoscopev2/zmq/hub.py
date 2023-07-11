@@ -23,10 +23,10 @@ from typing import Tuple
 import zmq
 from docopt import docopt
 
-from cfm.zmq.subscriber import ObjectSubscriber
-from cfm.zmq.publisher import Publisher
-from cfm.zmq.server import ObjectServer
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.subscriber import ObjectSubscriber
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.zmq.server import ObjectServer
+from openautoscopev2.zmq.utils import parse_host_and_port
 
 class Hub():
     """This is a central hub that is responsible for subscribing and publishing

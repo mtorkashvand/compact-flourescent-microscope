@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 from collections import defaultdict
 import PySimpleGUI as sg
 
-from cfm.zmq.client import GUIClient
+from openautoscopev2.zmq.client import GUIClient
 
 # Parameters
 BACKGROUND_COLOR = '#B3B6B7'
@@ -607,7 +607,7 @@ class InputWithIncrements(AbstractElement):
     # Handle
     def handle(self, **kwargs):
         # DEBUG
-        binsize = 2  # DEBUG it should not be constant! comply with cfm_gui.py
+        binsize = 2  # DEBUG it should not be constant! comply with run_gui.py
         event = kwargs['event']
         offset_other = kwargs[self.key_offset_other]
         if event != self.key:
@@ -629,7 +629,7 @@ class InputWithIncrements(AbstractElement):
         else:
             offset_x, offset_y = 224 + int(offset_other), 44 + value_new
         client_cli_cmd = "DO _flir_camera_set_region_{} 1 {} {} {} {} {}".format(
-            self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with cfm_gui.py
+            self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with run_gui.py
         )
         print(f"Executing: '{client_cli_cmd}'")
         self.client.process(client_cli_cmd)

@@ -18,7 +18,7 @@ import os
 from subprocess import Popen
 
 from serial.tools import list_ports
-from cfm.devices.utils import array_props_from_string
+from openautoscopev2.devices.utils import array_props_from_string
 
 def get_teensy_port():
     """
@@ -41,7 +41,7 @@ def get_teensy_port():
             return port[0]
     return
 
-class CFMwithGUI:
+class OASwithGUI:
     DEFAUL_KWARGS = dict(
         format = "UINT8_YX_512_512",
         camera_serial_number_behavior = "22591117",
@@ -67,7 +67,7 @@ class CFMwithGUI:
     )
     # Constructor
     def __init__(self, name, **kwargs) -> None:
-        self.kwargs = CFMwithGUI.DEFAUL_KWARGS.copy()
+        self.kwargs = OASwithGUI.DEFAUL_KWARGS.copy()
         for key,value in kwargs.items():
             self.kwargs[key] = value
         self.jobs = []
@@ -112,14 +112,14 @@ class CFMwithGUI:
         teensy_usb_port = get_teensy_port()
         (_, _, shape) = array_props_from_string(format)
 
-        self.jobs.append(Popen(["cfm_hub",
+        self.jobs.append(Popen(["oas_hub",
                         f"--server={server_client}",
                         f"--inbound=L{forwarder_out}",
                         f"--outbound=L{forwarder_in}",
                         f"--name=hub",
                         f"--framerate={framerate}"]))
 
-        self.jobs.append(Popen(["cfm_forwarder",
+        self.jobs.append(Popen(["oas_forwarder",
                         f"--inbound={forwarder_in}",
                         f"--outbound={forwarder_out}"]))
             
@@ -130,14 +130,14 @@ class CFMwithGUI:
             if not os.path.exists(logger_directory):
                 os.makedirs(logger_directory)
 
-            self.jobs.append(Popen(["cfm_processor",
+            self.jobs.append(Popen(["oas_processor",
                             f"--name=controller",
                             f"--inbound=L{forwarder_out}",
                             f"--outbound={processor_out}",
                             f"--deadzone=5000",
                             f"--threshold=50"]))
 
-            self.jobs.append(Popen(["cfm_commands",
+            self.jobs.append(Popen(["oas_commands",
                             f"--inbound=L{processor_out}",
                             f"--outbound=L{forwarder_in}",
                             f"--commands=L{forwarder_out}"]))
@@ -166,7 +166,7 @@ class CFMwithGUI:
                             f"--exposure_time={exposure_gcamp}",
                             f"--frame_rate={framerate}"]))
             ## Behavior Data Hub
-            self.jobs.append(Popen(["cfm_data_hub",
+            self.jobs.append(Popen(["oas_data_hub",
                             f"--data_in=L{data_camera_out_behavior}",
                             f"--commands_in=L{forwarder_out}",
                             f"--status_out=L{forwarder_in}",
@@ -174,7 +174,7 @@ class CFMwithGUI:
                             f"--format={format}",
                             f"--name=data_hub_behavior"]))
             ## GCaMP Data Hub
-            self.jobs.append(Popen(["cfm_data_hub",
+            self.jobs.append(Popen(["oas_data_hub",
                             f"--data_in=L{data_camera_out_gcamp}",
                             f"--commands_in=L{forwarder_out}",
                             f"--status_out=L{forwarder_in}",
@@ -183,7 +183,7 @@ class CFMwithGUI:
                             f"--name=data_hub_gcamp",
                             "--flip_image"]))  # TODO: convert to an argument coming from GUI
             ## Behavior Data Writer
-            self.jobs.append(Popen(["cfm_writer",
+            self.jobs.append(Popen(["oas_writer",
                             f"--data_in=L{data_stamped_behavior}",
                             f"--commands_in=L{forwarder_out}",
                             f"--status_out=L{forwarder_in}",
@@ -192,7 +192,7 @@ class CFMwithGUI:
                             f"--video_name=flircamera_behavior",
                             f"--name=writer_behavior"]))
             ## GCaMP Data Writer
-            self.jobs.append(Popen(["cfm_writer",
+            self.jobs.append(Popen(["oas_writer",
                             f"--data_in=L{data_stamped_gcamp}",
                             f"--commands_in=L{forwarder_out}",
                             f"--status_out=L{forwarder_in}",
@@ -201,12 +201,12 @@ class CFMwithGUI:
                             f"--video_name=flircamera_gcamp",
                             f"--name=writer_gcamp"]))
             # Logger
-            self.jobs.append(Popen(["cfm_logger",
+            self.jobs.append(Popen(["oas_logger",
                             f"--inbound={forwarder_out}",
                             f"--directory={logger_directory}"]))
             # TODO: add selection between only one tracker being activated
             ## Behavior Tracker
-            self.jobs.append(Popen(["cfm_tracker",
+            self.jobs.append(Popen(["oas_tracker",
                             f"--commands_in=L{forwarder_out}",
                             f"--commands_out=L{forwarder_in}",
                             f"--data_in=L{data_stamped_behavior}",
@@ -217,7 +217,7 @@ class CFMwithGUI:
                             f"--data_out_debug={tracker_out_debug}",
                         ]))
             ## GCaMP  Tracker
-            self.jobs.append(Popen(["cfm_tracker",
+            self.jobs.append(Popen(["oas_tracker",
                             f"--commands_in=L{forwarder_out}",
                             f"--commands_out=L{forwarder_in}",
                             f"--data_in=L{data_stamped_gcamp}",
@@ -228,7 +228,7 @@ class CFMwithGUI:
                             f"--data_out_debug={tracker_out_debug}",
                         ]))
 
-            self.jobs.append(Popen(["cfm_teensy_commands",
+            self.jobs.append(Popen(["oas_teensy_commands",
                             f"--inbound=L{forwarder_out}",
                             f"--outbound=L{forwarder_in}",
                             f"--port={teensy_usb_port}"]))

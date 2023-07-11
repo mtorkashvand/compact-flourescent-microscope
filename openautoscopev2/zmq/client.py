@@ -5,10 +5,10 @@
 
 import zmq
 
-from cfm.zmq.publisher import Publisher
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.publisher import Publisher
+from openautoscopev2.zmq.utils import parse_host_and_port
 
-from cfm.zmq.utils import (
+from openautoscopev2.zmq.utils import (
     coerce_string,
     coerce_bytes
 )

@@ -8,9 +8,9 @@ import PySimpleGUI as sg
 import zmq
 import numpy as np
 
-from cfm.zmq.utils import parse_host_and_port
-from cfm.zmq.array import TimestampedSubscriber
-from cfm.devices.utils import array_props_from_string
+from openautoscopev2.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.array import TimestampedSubscriber
+from openautoscopev2.devices.utils import array_props_from_string
 
 DEBUG = False
 

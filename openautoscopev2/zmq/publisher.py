@@ -19,7 +19,7 @@ from typing import Union
 import zmq
 from docopt import docopt
 
-from cfm.zmq.utils import (
+from openautoscopev2.zmq.utils import (
     address_from_host_and_port,
     parse_host_and_port,
     connect_or_bind

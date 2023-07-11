@@ -41,10 +41,10 @@ import PySpin
 import numpy as np
 from docopt import docopt
 
-from cfm.zmq.publisher import Publisher as Publisher
-from cfm.zmq.subscriber import ObjectSubscriber
-from cfm.zmq.array import Publisher as Array_Publisher
-from cfm.zmq.utils import parse_host_and_port
+from openautoscopev2.zmq.publisher import Publisher as Publisher
+from openautoscopev2.zmq.subscriber import ObjectSubscriber
+from openautoscopev2.zmq.array import Publisher as Array_Publisher
+from openautoscopev2.zmq.utils import parse_host_and_port
 
 
 

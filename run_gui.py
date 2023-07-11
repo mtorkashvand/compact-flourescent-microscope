@@ -24,11 +24,11 @@ import cv2 as cv
 import numpy as np
 import PySimpleGUI as sg
 
-from cfm.zmq.client import GUIClient
-from cfm.system.cfm import CFMwithGUI
-from cfm.devices.utils import array_props_from_string
-from cfm.devices.dual_displayer import DualDisplayer
-from cfm.ui.elements import (
+from openautoscopev2.zmq.client import GUIClient
+from openautoscopev2.system.oas import OASwithGUI
+from openautoscopev2.devices.utils import array_props_from_string
+from openautoscopev2.devices.dual_displayer import DualDisplayer
+from openautoscopev2.ui.elements import (
     InputWithIncrements, ReturnHandler,
     LEDCompound, ExposureCompound, FramerateCompound, LEDIR,
     ZInterpolationTracking, ToggleRecording, ToggleTracking,
@@ -36,7 +36,7 @@ from cfm.ui.elements import (
     InputwithIncrementsforZOffset
 )
 
-from cfm.icons.icons import *
+from openautoscopev2.icons.icons import *
 
 
 import json
@@ -56,23 +56,24 @@ def jdump(obj, fp):
     return
 
 # Get Path
-FP_CFM_GUI_FOLDER = os.path.dirname(os.path.abspath(__file__))
+FP_OAS_GUI_FOLDER = os.path.dirname(os.path.abspath(__file__))
 FP_MODELS_PATHS = os.path.join(
-    FP_CFM_GUI_FOLDER,
+    FP_OAS_GUI_FOLDER,
     "models_path.json"
 )
 fp_data_path = os.path.join(
-    FP_CFM_GUI_FOLDER,
+    FP_OAS_GUI_FOLDER,
     "data"
 )
 
 
 # Load Configs
 fp_configs = os.path.join(
-    FP_CFM_GUI_FOLDER,
+    FP_OAS_GUI_FOLDER,
     "configs.json"
 )
 all_states = jload(fp_configs) if os.path.exists(fp_configs) else dict()
+all_states["tracking_model--COMBO"] = "10x_default_all"
 print(all_states)
 if 'data_directory' in all_states:
     fp_data_path = all_states['data_directory']
@@ -121,13 +122,13 @@ y_bound = int((CAMERA_Y_MAX - binsize * shape[0]) / (2 * binsize))
 x_bound = int((CAMERA_X_MAX - binsize * shape[1]) / (2 * binsize))
 
 # Methods
-## Run CFM with GUI
-def run_cfm_with_gui(**kwargs):
-    cfm_with_gui = CFMwithGUI(
-        name="cfm_with_gui",
+## Run OAS with GUI
+def run_oas_with_gui(**kwargs):
+    oas_with_gui = OASwithGUI(
+        name="oas_with_gui",
         **kwargs
     )
-    return cfm_with_gui
+    return oas_with_gui
 
 
 #####################
@@ -442,11 +443,11 @@ offset_gy = y_bound + int(values['offset_gcamp_y'])
 
 
 if not DEBUG:
-    # Add Configs to Overwrite when running CFM
+    # Add Configs to Overwrite when running OAS
     for k,v in all_states.items():
         values[k] = v
-    cfm_with_gui = run_cfm_with_gui(**values)
-    cfm_with_gui.run()
+    oas_with_gui = run_oas_with_gui(**values)
+    oas_with_gui.run()
 
 # Add some rest time for the camera to initialize so the offset would apply
 time.sleep(1)
@@ -475,7 +476,7 @@ while True:
     for element in registered_events[event]:
         element.handle(event = event, **values)
     # Add Values
-    # Add values from UI element with expected keys in CFMwithGUI
+    # Add values from UI element with expected keys in OASwithGUI
     for element in elements:
         element.add_values(values)
     
