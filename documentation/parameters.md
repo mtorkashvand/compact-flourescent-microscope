@@ -9,3 +9,18 @@ The cameras used in this system have a sensor size of 1920 by 1200. To optimize 
 <p align="center">
   <img src="../images/images/offsets.png" alt="Image" width="638" height="487">
 </p>
+
+### Imaging Frame Rate (framerate)
+The frame rate parameter determines the speed at which both cameras capture images. When you initiate the system, the cameras operate at the default frame rate value. However, you have the option to modify this value within the [graphical user interface (GUI)](gui.md). If needed, you can also adjust the default value within the [configuration file](../configs.json). It is worth noting that the frame rate directly impacts the available processing time for online tasks like object detection, which is crucial for tracking. Therefore, it is advisable to run the system at the lowest frame rate that meets the requirements of your specific experiments.
+
+### Exposure time (exposure_gcamp, exposure_behavior)
+The exposure time for each camera determines how long the camera sensors collect incoming light. Although both cameras operate at the same frame rate, they have different durations for light capture. It is recommended to use lower frame rates to allow sufficient time for online processing tasks. However, it is essential to limit the exposure time to prevent camera saturation. If small features in bright areas of the images are disappearing or becoming difficult to discern due to high light intensity, it is advisable to decrease the exposure time. The exposure time for each camera can be adjusted within the [graphical user interface (GUI)](gui.md), and the default values can also be modified in the [configuration file](../configs.json).
+
+### Tracking Model
+The tracking functionality in this system utilizes a customized variant of ResNet18. By training the network with different datasets, it becomes possible to fine-tune it for various imaging conditions or specific stages. In the [models_path.json](../models_path.json) file, you have the option to include the path to a particular trained model and assign it a key. As a result, within the [graphical user interface (GUI)](gui.md), you will be able to select the desired model using the corresponding assigned key. Alternatively, you can utilize the default trained models provided for tracking.
+
+### Background Subtraction Quantile
+The left display in the [graphical user interface (GUI)](gui.md)  shows an overlay of both channels, with the behavior channel displayed in gray and the gcamp channel displayed in green. Due to background noise in the gcamp channel, the overlaid raw data often results in a green hue. To address this, a background subtraction is performed specifically on the green channel. The threshold for this subtraction is determined by the 'q' parameter, which represents the quantile value. By default, 'q' is set to 0.7, but you can adjust this value in the [configuration file](../configs.json). If you prefer to view the raw data overlay without background subtraction, you can set 'q' to 0, resulting in the display of both channels' raw data in the left display.
+
+### X, Y and Z Speed
+The motorized stage offers omnidirectional movement through the use of an [Xbox controller](xbox_controller.md). Additionally, we have implemented a GUI feature that allows users to control the stage's movement. In the [configuration file](../configs.json), you will find default speed settings for both the XY direction (xypad-input) and the Z direction (zpad-input). These values can also be modified directly within the [graphical user interface (GUI)](gui.md).
