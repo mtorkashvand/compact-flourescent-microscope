@@ -38,6 +38,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': console_scripts
     },
-    packages=['oas'],
+    packages=['openautoscopev2'],
     python_requires=">=3.6",
 )
