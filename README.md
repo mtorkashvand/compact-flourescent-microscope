@@ -2,8 +2,8 @@
 
 
 <div style="display: flex; justify-content: center;">
-    <img src="images/images/OpenAutoScope.png" alt="Image 1" height="400" />
-    <img src="images/images/OpenAutoScope_AutoCAD.png" alt="Image 2" height="400" />
+    <img src="images/images/OpenAutoScope.png" alt="Image 1" height="350" />
+    <img src="images/images/OpenAutoScope_AutoCAD.png" alt="Image 2" height="350" />
 </div>
 
 # About
