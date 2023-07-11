@@ -19,7 +19,8 @@ It is assumed that you have already assembled the system before proceeding to th
 
 
 
-## Parameters
+## [Parameters](parameters.md)
+Within this file, you will find the definitions for parameters in the [configuration file](../configs.json) as well as various other components of the system.
 
 ## Calibrations 
 
