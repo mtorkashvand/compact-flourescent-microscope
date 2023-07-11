@@ -3,32 +3,8 @@
 # This runs wormtracker.
 #
 # Copyright 2022
-# Author: Sina Rasouli
+# Author: Sina Rasouli, Mahdi Torkashvand (mmt.mahdi@gmail.com)
 # Used code developed by "Mahdi Torkashvand" @ https://github.com/mtorkashvand/WormTracker-NSnB
-
-"""
-Run all wormtracker components.
-
-Usage:
-    cfm.py                              [options]
-
-Options:
-    -h --help                           Show this help.
-    --format=FORMAT_STR                 Image format.
-                                            [default: UINT8_YX_512_512]
-    --camera_serial_number_behavior=SN  Camera Serial Number.
-                                            [default: 22591117]
-    --camera_serial_number_gcamp=SN     Camera Serial Number.
-                                            [default: 22591142]
-    --binsize=NUMBER                    Specify camera bin size.
-                                            [default: 2]
-    --exposure_behavior=VALUE           Exposure time of flircamera in us.
-                                            [default: 1]
-    --exposure_gcamp=VALUE              Exposure time of flircamera in us.
-                                            [default: 1]
-    --interpolation_tracking=BOOL       Uses user-specified points to interpolate z.
-                                            [default: False]
-"""
 
 """
 Different Camera Configuration Serial Numbers:
@@ -36,262 +12,225 @@ Different Camera Configuration Serial Numbers:
 - 22591142, 22591117
 """
 
-import time
+DEBUG = False
+
 import os
-import signal
 from subprocess import Popen
 
-from docopt import docopt
-
+from serial.tools import list_ports
 from cfm.devices.utils import array_props_from_string
 
-def execute(
-        job,
-        fmt: str,
-        camera_serial_number_behavior: str,
-        camera_serial_number_gcamp: str,
-        binsize: str,
-        exposure_behavior: str,
-        exposure_gcamp: str,
-        interpolation_tracking: bool,
-    ):
-    """This runs all devices."""
+def get_teensy_port():
+    """
+    This returns the port number for the Teensy board assuming there is one 
+    (and only one) Teensy board connected to a COM port.
 
-    forwarder_in = str(5000)
-    forwarder_out = str(5001)
-    server_client = str(5002)
-    XInputToZMQPub_out = str(6000)
-    processor_out = str(6001)
-    data_camera_out_behavior = str(5003)
-    data_stamped_behavior = str(5004)
-    tracker_out_behavior = str(5005)
-    data_camera_out_gcamp = str(5006)
-    data_stamped_gcamp = str(5007)
-    tracker_out_gcamp = str(5008)
-    tracker_out_debug  = str(5009)
+    For the case with multiple Teensy boards, you can get a board if VENDOR_ID, PRODUCT_ID
+    and SERIAL_NUMBER are available:
 
-    (_, _, shape) = array_props_from_string(fmt)
-    teensy_usb_port = "COM4"
-    flir_exposure_behavior = exposure_behavior
-    flir_exposure_gcamp = exposure_gcamp
-    framerate = str(18)
-    # exposure_time = 975000.0 / float(framerate) ## Maximum Possible Exposure
-    # Maximum acceptable framerate based on exposure
-    # framerate_max = 1000000 / (1.02 * exposure_time)
-    flir_exposure_behavior = str(18000)  # micro-seconds
-    flir_exposure_gcamp = str( 975000.0 / float(framerate) )
-    # flir_exposure_gcamp = str(5000)
-    binsize = str(binsize)
+    for port in list(list_ports.comports()):
+        if port[1].startswith("Teensy") and if port[2] == "USB VID:PID=%s:%s SNR=%s"%(VENDOR_ID, PRODUCT_ID, SERIAL_NUMBER):
+	        return port[0]
+    """
+    # DEBUG TODO use the following linkes to change this code
+    # https://pyserial.readthedocs.io/en/latest/tools.html#serial.tools.list_ports.ListPortInfo
+    # https://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
+    return "COM4"
+    for port in list(list_ports.comports()):
+        if port[1].startswith("Teensy"):
+            return port[0]
+    return
 
-    data_directory = "C:\src\data"
-    logger_directory = "C:\src\data"
-    if not os.path.exists(data_directory):
-        os.makedirs(data_directory)
-    if not os.path.exists(logger_directory):
-        os.makedirs(logger_directory)
-
-    job.append(Popen(["cfm_client",
-                      "--port=" + server_client]))
-
-    job.append(Popen(["xinput_pub",
-                      "--outbound=*:" + XInputToZMQPub_out]))
-
-    job.append(Popen(["cfm_processor",
-                      "--inbound=L" + XInputToZMQPub_out,
-                      "--outbound=" + processor_out,
-                      "--deadzone=5000",
-                      "--threshold=50"]))
-
-    job.append(Popen(["cfm_commands",
-                      "--inbound=L" + processor_out,
-                      "--outbound=L" + forwarder_in]))
-
-
-    job.append(Popen(["cfm_hub",
-                       "--server=" + server_client,
-                       "--inbound=L" + forwarder_out,
-                       "--outbound=L" + forwarder_in,
-                       "--name=hub",
-                       "--framerate="+ framerate]))
-
-    job.append(Popen(["cfm_forwarder",
-                      "--inbound=" + forwarder_in,
-                      "--outbound=" + forwarder_out]))
-
-    # Cameras
-    # Behavior
-    job.append(Popen(["flir_camera",
-                    "--serial_number=" + camera_serial_number_behavior,
-                    "--commands=localhost:" + forwarder_out,
-                    "--name=FlirCameraBehavior",
-                    "--status=localhost:" + forwarder_in,
-                    "--data=*:" + data_camera_out_behavior,
-                    "--width=" + str(shape[1]),
-                    "--height=" + str(shape[0]),
-                    "--binsize=" + binsize,
-                    "--exposure_time=" + flir_exposure_behavior,
-                    "--frame_rate=" + framerate,]))
-    ## GCaMP
-    job.append(Popen(["flir_camera",
-                    "--serial_number=" + camera_serial_number_gcamp,
-                    "--commands=localhost:" + forwarder_out,
-                    "--name=FlirCameraGCaMP",
-                    "--status=localhost:" + forwarder_in,
-                    "--data=*:" + data_camera_out_gcamp,
-                    "--width=" + str(shape[1]),
-                    "--height=" + str(shape[0]),
-                    "--binsize=" + binsize,
-                    "--exposure_time=" + flir_exposure_gcamp,
-                    "--frame_rate=" + framerate]))
+class CFMwithGUI:
+    DEFAUL_KWARGS = dict(
+        format = "UINT8_YX_512_512",
+        camera_serial_number_behavior = "22591117",
+        camera_serial_number_gcamp = "22591142",
+        binsize = 2,
+        exposure_behavior = 1,
+        exposure_gcamp = 1,
+        interpolation_tracking = False,
+        forwarder_in = 5000,
+        forwarder_out = 5001,
+        server_client = 5002,
+        processor_out = 6001,
+        data_camera_out_behavior = 5003,
+        data_stamped_behavior = 5004,
+        tracker_out_behavior = 5005,
+        data_camera_out_gcamp = 5006,
+        data_stamped_gcamp = 5007,
+        tracker_out_gcamp = 5008,
+        tracker_out_debug  = 5009,
+        framerate = 20,
+        data_directory = r"C:\src\data",
+        logger_directory = r"C:\src\data",
+    )
+    # Constructor
+    def __init__(self, name, **kwargs) -> None:
+        self.kwargs = CFMwithGUI.DEFAUL_KWARGS.copy()
+        for key,value in kwargs.items():
+            self.kwargs[key] = value
+        self.jobs = []
+        self.name = name
+        return
     
-
-    # Data Hubs
-    ## Behavior
-    job.append(Popen(["cfm_data_hub",
-                        "--data_in=L" + data_camera_out_behavior,
-                        "--commands_in=L" + forwarder_out,
-                        "--status_out=L" + forwarder_in,
-                        "--data_out=" + data_stamped_behavior,
-                        "--format=" + fmt,
-                        "--name=data_hub_behavior"]))
-    ## GCaMP
-    job.append(Popen(["cfm_data_hub",
-                        "--data_in=L" + data_camera_out_gcamp,
-                        "--commands_in=L" + forwarder_out,
-                        "--status_out=L" + forwarder_in,
-                        "--data_out=" + data_stamped_gcamp,
-                        "--format=" + fmt,
-                        "--name=data_hub_gcamp",
-                        "--flip_image"]))
-
-    # Writers
-    ## Behavior
-    job.append(Popen(["cfm_writer",
-                        "--data_in=L" + data_stamped_behavior,
-                        "--commands_in=L" + forwarder_out,
-                        "--status_out=L" + forwarder_in,
-                        "--format=" + fmt,
-                        "--directory="+ data_directory,
-                        "--video_name=flircamera_behavior",
-                        "--name=writer_behavior"]))
-    ## GCaMP
-    job.append(Popen(["cfm_writer",
-                        "--data_in=L" + data_stamped_gcamp,
-                        "--commands_in=L" + forwarder_out,
-                        "--status_out=L" + forwarder_in,
-                        "--format=" + fmt,
-                        "--directory="+ data_directory,
-                        "--video_name=flircamera_gcamp",
-                        "--name=writer_gcamp"]))
-
-    # Display
-    ## Behavior
-    job.append(Popen(["cfm_displayer",
-                          "--inbound=L" + tracker_out_behavior,
-                          "--format=" + fmt,
-                          "--commands=L" + forwarder_out,
-                          "--name=displayer_behavior"]))
-    ## GCaMP
-    job.append(Popen(["cfm_displayer",
-                          "--inbound=L" + tracker_out_gcamp,
-                          "--format=" + fmt,
-                          "--commands=L" + forwarder_out,
-                          "--name=displayer_gcamp"]))
-    ## Debug Display
-    job.append(Popen(["cfm_displayer",
-                          "--inbound=L" + tracker_out_debug,
-                          "--format=" + fmt,
-                          "--commands=L" + forwarder_out,
-                          "--name=displayer_debug"]))
-
-    # Logger
-    job.append(Popen(["cfm_logger",
-                      "--inbound=" + forwarder_out,
-                      "--directory=" + logger_directory]))
-
-    # Trackers
-    # TODO: add selection between only one tracker being activated
-    ## Behavior
-    job.append(Popen(["cfm_tracker",
-                      "--commands_in=L" + forwarder_out,
-                      "--commands_out=L" + forwarder_in,
-                      "--data_in=L" + data_stamped_behavior,
-                      "--data_out=" + tracker_out_behavior,
-                      "--format=" + fmt,
-                      "--interpolation_tracking=" + str(interpolation_tracking),
-                      "--name=tracker_behavior",
-                      "--data_out_debug=" + tracker_out_debug]))
-    ## GCaMP
-    job.append(Popen(["cfm_tracker",
-                      "--commands_in=L" + forwarder_out,
-                      "--commands_out=L" + forwarder_in,
-                      "--data_in=L" + data_stamped_gcamp,
-                      "--data_out=" + tracker_out_gcamp,
-                      "--format=" + fmt,
-                      "--interpolation_tracking=" + str(interpolation_tracking),
-                      "--name=tracker_gcamp",
-                      "--data_out_debug=" + tracker_out_debug]))
-
-    job.append(Popen(["cfm_teensy_commands",
-                      "--inbound=L" + forwarder_out,
-                      "--outbound=L" + forwarder_in,
-                      "--port=" + teensy_usb_port]))
-
-
-
-
-
-def run(
-    fmt: str,
-    camera_serial_number_behavior: str,
-    camera_serial_number_gcamp: str,
-    binsize: str,
-    exposure_behavior: str,
-    exposure_gcamp: str,
-    interpolation_tracking: bool,
-):
-    """Run all system devices."""
-
-    jobs = []
-
-    def finish(*_):
-        for job in jobs:
+    # Kill
+    def kill(self):
+        for job in self.jobs:
             try:
                 job.kill()
             except PermissionError as _e:
                 print("Received error closing process: ", _e)
+        self.jobs = []
+        return
+    
+    # Run
+    def run(self):
+        """This runs all devices."""
 
-        raise SystemExit
+        camera_serial_number_behavior = self.kwargs['camera_serial_number_behavior']
+        camera_serial_number_gcamp = self.kwargs['camera_serial_number_gcamp']
+        binsize = self.kwargs['binsize']
+        exposure_behavior = self.kwargs['exposure_behavior']
+        exposure_gcamp = self.kwargs['exposure_gcamp']
+        interpolation_tracking =  self.kwargs['interpolation_tracking']
+        forwarder_in = self.kwargs['forwarder_in']
+        forwarder_out = self.kwargs['forwarder_out']
+        server_client = self.kwargs['server_client']
+        processor_out = self.kwargs['processor_out']
+        data_camera_out_behavior = self.kwargs['data_camera_out_behavior']
+        data_stamped_behavior = self.kwargs['data_stamped_behavior']
+        tracker_out_behavior = self.kwargs['tracker_out_behavior']
+        data_camera_out_gcamp = self.kwargs['data_camera_out_gcamp']
+        data_stamped_gcamp = self.kwargs['data_stamped_gcamp']
+        tracker_out_gcamp = self.kwargs['tracker_out_gcamp']
+        tracker_out_debug  = self.kwargs['tracker_out_debug']
+        data_directory = self.kwargs['data_directory']  # "C:\src\data"
+        logger_directory = self.kwargs['logger_directory']  # "C:\src\data"
+        framerate = self.kwargs['framerate']
+        format = self.kwargs['format']
+        teensy_usb_port = get_teensy_port()
+        (_, _, shape) = array_props_from_string(format)
 
-    signal.signal(signal.SIGINT, finish)
+        self.jobs.append(Popen(["cfm_hub",
+                        f"--server={server_client}",
+                        f"--inbound=L{forwarder_out}",
+                        f"--outbound=L{forwarder_in}",
+                        f"--name=hub",
+                        f"--framerate={framerate}"]))
 
-    execute(
-        jobs, fmt,
-        camera_serial_number_behavior,
-        camera_serial_number_gcamp,
-        binsize,
-        exposure_behavior,
-        exposure_gcamp,
-        interpolation_tracking
-    )
+        self.jobs.append(Popen(["cfm_forwarder",
+                        f"--inbound={forwarder_in}",
+                        f"--outbound={forwarder_out}"]))
+            
+        if not DEBUG:
 
-    while True:
-        time.sleep(1)
+            if not os.path.exists(data_directory):
+                os.makedirs(data_directory)
+            if not os.path.exists(logger_directory):
+                os.makedirs(logger_directory)
 
+            self.jobs.append(Popen(["cfm_processor",
+                            f"--name=controller",
+                            f"--inbound=L{forwarder_out}",
+                            f"--outbound={processor_out}",
+                            f"--deadzone=5000",
+                            f"--threshold=50"]))
 
-def main():
-    """CLI entry point."""
-    args = docopt(__doc__)
+            self.jobs.append(Popen(["cfm_commands",
+                            f"--inbound=L{processor_out}",
+                            f"--outbound=L{forwarder_in}",
+                            f"--commands=L{forwarder_out}"]))
+            # Behavior Camera
+            self.jobs.append(Popen(["flir_camera",
+                            f"--serial_number={camera_serial_number_behavior}",
+                            f"--commands=L{forwarder_out}",
+                            f"--name=FlirCameraBehavior",
+                            f"--status=L{forwarder_in}",
+                            f"--data=*:{data_camera_out_behavior}",
+                            f"--width={shape[1]}",
+                            f"--height={shape[0]}",
+                            f"--binsize={binsize}",
+                            f"--exposure_time={exposure_behavior}",
+                            f"--frame_rate={framerate}",]))
+            ## GCaMP Camera
+            self.jobs.append(Popen(["flir_camera",
+                            f"--serial_number={camera_serial_number_gcamp}",
+                            f"--commands=L{forwarder_out}",
+                            f"--name=FlirCameraGCaMP",
+                            f"--status=L{forwarder_in}",
+                            f"--data=*:{data_camera_out_gcamp}",
+                            f"--width={shape[1]}",
+                            f"--height={shape[0]}",
+                            f"--binsize={binsize}",
+                            f"--exposure_time={exposure_gcamp}",
+                            f"--frame_rate={framerate}"]))
+            ## Behavior Data Hub
+            self.jobs.append(Popen(["cfm_data_hub",
+                            f"--data_in=L{data_camera_out_behavior}",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--status_out=L{forwarder_in}",
+                            f"--data_out={data_stamped_behavior}",
+                            f"--format={format}",
+                            f"--name=data_hub_behavior"]))
+            ## GCaMP Data Hub
+            self.jobs.append(Popen(["cfm_data_hub",
+                            f"--data_in=L{data_camera_out_gcamp}",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--status_out=L{forwarder_in}",
+                            f"--data_out={data_stamped_gcamp}",
+                            f"--format={format}",
+                            f"--name=data_hub_gcamp",
+                            "--flip_image"]))  # TODO: convert to an argument coming from GUI
+            ## Behavior Data Writer
+            self.jobs.append(Popen(["cfm_writer",
+                            f"--data_in=L{data_stamped_behavior}",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--status_out=L{forwarder_in}",
+                            f"--format={format}",
+                            f"--directory={data_directory}",
+                            f"--video_name=flircamera_behavior",
+                            f"--name=writer_behavior"]))
+            ## GCaMP Data Writer
+            self.jobs.append(Popen(["cfm_writer",
+                            f"--data_in=L{data_stamped_gcamp}",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--status_out=L{forwarder_in}",
+                            f"--format={format}",
+                            f"--directory={data_directory}",
+                            f"--video_name=flircamera_gcamp",
+                            f"--name=writer_gcamp"]))
+            # Logger
+            self.jobs.append(Popen(["cfm_logger",
+                            f"--inbound={forwarder_out}",
+                            f"--directory={logger_directory}"]))
+            # TODO: add selection between only one tracker being activated
+            ## Behavior Tracker
+            self.jobs.append(Popen(["cfm_tracker",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--commands_out=L{forwarder_in}",
+                            f"--data_in=L{data_stamped_behavior}",
+                            f"--data_out={tracker_out_behavior}",
+                            f"--format={format}",
+                            f"--interpolation_tracking={interpolation_tracking}",
+                            f"--name=tracker_behavior",
+                            f"--data_out_debug={tracker_out_debug}",
+                        ]))
+            ## GCaMP  Tracker
+            self.jobs.append(Popen(["cfm_tracker",
+                            f"--commands_in=L{forwarder_out}",
+                            f"--commands_out=L{forwarder_in}",
+                            f"--data_in=L{data_stamped_gcamp}",
+                            f"--data_out={tracker_out_gcamp}",
+                            f"--format={format}",
+                            f"--interpolation_tracking={interpolation_tracking}",
+                            f"--name=tracker_gcamp",
+                            f"--data_out_debug={tracker_out_debug}",
+                        ]))
 
-    run(
-        fmt=args["--format"],
-        camera_serial_number_behavior=args["--camera_serial_number_behavior"],
-        camera_serial_number_gcamp=args["--camera_serial_number_gcamp"],
-        binsize=args["--binsize"],
-        exposure_behavior=args["--exposure_behavior"],
-        exposure_gcamp=args["--exposure_gcamp"],
-        interpolation_tracking=args["--interpolation_tracking"]
-    )
+            self.jobs.append(Popen(["cfm_teensy_commands",
+                            f"--inbound=L{forwarder_out}",
+                            f"--outbound=L{forwarder_in}",
+                            f"--port={teensy_usb_port}"]))
 
-if __name__ == "__main__":
-    main()
+        return

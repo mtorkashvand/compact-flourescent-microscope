@@ -24,8 +24,8 @@ import cv2 as cv
 import numpy as np
 import PySimpleGUI as sg
 
-from cfm.zmq.client_with_gui import GUIClient
-from cfm.system.cfm_with_gui import CFMwithGUI
+from cfm.zmq.client import GUIClient
+from cfm.system.cfm import CFMwithGUI
 from cfm.devices.utils import array_props_from_string
 from cfm.devices.dual_displayer import DualDisplayer
 from cfm.ui.elements import (

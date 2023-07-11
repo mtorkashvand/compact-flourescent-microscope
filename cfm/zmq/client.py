@@ -1,37 +1,31 @@
 #! python
 #
 # Copyright 2021
-# Author: Mahdi Torkashvand, Vivek Venkatachalam
-
-"""
-ZMQ Client.
-
-Usage:
-    client.py             [options]
-
-Options:
-    -h --help             Show this help.
-    --port=PORT           [default: 5002]
-"""
-
-import signal
+# Author: Mahdi Torkashvand, Sina Rasouli
 
 import zmq
-from docopt import docopt
+
+from cfm.zmq.publisher import Publisher
+from cfm.zmq.utils import parse_host_and_port
 
 from cfm.zmq.utils import (
     coerce_string,
     coerce_bytes
 )
 
-class Client():
+DEBUG = False
+
+class GUIClient():
     """This is a wrapped ZMQ client that can send requests to a server."""
 
     def __init__(
             self,
-            port):
+            port: int,
+            port_forwarder_in: str
+        ):
 
         self.port = port
+        self.bounds_forwarder_in = parse_host_and_port(port_forwarder_in)
         self.running = False
 
         self.context = zmq.Context.instance()
@@ -39,6 +33,15 @@ class Client():
 
         address = "tcp://localhost:{}".format(self.port)
         self.socket.connect(address)
+
+        self.control_socket = self.context.socket(zmq.PUB)
+        self.control_socket.bind("tcp://*:4862")  # DEBUG TODO change this to an argument for the class
+
+        self.publisher = Publisher(
+            host=self.bounds_forwarder_in[0],
+            port=self.bounds_forwarder_in[1],
+            bound=self.bounds_forwarder_in[2]
+        )
 
     def recv(self) -> bytes:
         """Receive a reply."""
@@ -49,44 +52,16 @@ class Client():
         """Send a request."""
 
         self.socket.send(req)
+    
+    def log(self, msg):
+        self.publisher.send("logger "+ str(msg))
 
-    def process(self):
-        """Take a single request from stdin, send
-        it to a server, and return the reply."""
-
-        req_str = input()
-        if req_str == "DO shutdown":
-            self.running = False
+    def process(self, req_str):
+        if DEBUG:
+            return
         self.send(coerce_bytes(req_str))
-        print(coerce_string(self.recv()))
-
-
-    def loop(self):
-        """Continuously handle requests."""
-
-        def _finish(*_):
-            raise SystemExit
-
-        signal.signal(signal.SIGINT, _finish)
-
-        while self.running:
-            self.process()
-
-    def run(self):
-        """Start looping."""
-
-        self.running = True
-        self.loop()
-
-def main():
-    """CLI entry point."""
-
-    args = docopt(__doc__)
-    port = int(args["--port"])
-
-    client = Client(port)
-    client.run()
-
-
-if __name__ == "__main__":
-    main()
+        self.log(f"<CLIENT WITH GUI> command sent: {req_str}")
+        rep_str = coerce_string(self.recv())
+        self.log(f"<CLIENT WITH GUI> response received: {rep_str}")
+        if req_str == "DO shutdown":
+            self.control_socket.send_string("TERMINATE")

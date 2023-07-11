@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 from collections import defaultdict
 import PySimpleGUI as sg
 
-from cfm.zmq.client_with_gui import GUIClient
+from cfm.zmq.client import GUIClient
 
 # Parameters
 BACKGROUND_COLOR = '#B3B6B7'
