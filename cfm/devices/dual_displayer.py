@@ -113,6 +113,6 @@ class DualDisplayer:
             self._q = np.quantile(self.image_g, self.q)
             self._max_g = np.max( self.image_g )
             self.image[...,:]  = (self.image_r / 2).astype(np.uint8)[...,None]
-            self.image[...,1] += np.clip((self.image_g.astype(np.float32) - self._q ) * self._max_g / 2 / (self._max_g - self._q), 0, 255).astype(np.uint8)
+            self.image[...,1] += np.clip((self.image_g.astype(np.float32) - self._q ) * self._max_g / 2 / max(1, (self._max_g - self._q)), 0, 255).astype(np.uint8)
             return self.image_r, self.image_g, self.image
         return self.image_r, self.image_g, None
