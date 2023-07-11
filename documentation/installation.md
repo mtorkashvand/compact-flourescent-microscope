@@ -66,6 +66,7 @@ This file provides a comprehensive guide for the step-by-step installation of al
   ```
   pip install spinnaker_python-3.x.x.xx-cp38-cp38-win_amd64.whl
   ```
+  Note: replace `3.x.x.xx` in this command with the version of the SDK you downloaded.
 
 ## Arduino Software
  - Visit [Arduino](https://support.arduino.cc/hc/en-us/articles/360019833020-Download-and-install-Arduino-IDE) and download the latest release for Windows
