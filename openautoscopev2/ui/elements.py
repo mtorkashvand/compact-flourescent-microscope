@@ -6,6 +6,7 @@ from collections import defaultdict
 import PySimpleGUI as sg
 
 from openautoscopev2.zmq.client import GUIClient
+from openautoscopev2.devices.utils import resolve_path
 
 # Parameters
 BACKGROUND_COLOR = '#B3B6B7'
@@ -718,9 +719,10 @@ class InputwithIncrementsforZOffset(AbstractElement):
 
 
 class ModelsCombo(AbstractElement):
-    def __init__(self, text: str, key: str, fp_models_paths: str, default_value: str = None) -> None:
+    def __init__(self, text: str, key: str, fp_models_paths: str, default_value: str = None, fp_gui_folder: str = ".") -> None:
         super().__init__()
         self.fp_models_paths = fp_models_paths
+        self.fp_gui_folder = fp_gui_folder
         self.model_paths = dict()
         self.default_value = default_value
 
@@ -745,7 +747,9 @@ class ModelsCombo(AbstractElement):
     
     def _load_models(self):
         # TODO: load models each time the combo is selected or in some other way
-        self.model_paths = jload( self.fp_models_paths )
+        self.model_paths = {
+            key: resolve_path(fp, self.fp_gui_folder) for key,fp in jload( self.fp_models_paths ).items()
+        }
         values = list(self.model_paths)
         print(self.model_paths)
         self.combo.update(

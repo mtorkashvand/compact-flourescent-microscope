@@ -80,3 +80,9 @@ def mip_threeview(vol: np.ndarray) -> np.ndarray:
     output[S[1]:, :S[2]] = y
 
     return output
+
+def resolve_path(fp: str, fp_base_dir: str):
+    # Absolute Path
+    if os.path.isabs(fp):
+        return fp
+    return os.path.join( fp_base_dir, fp )

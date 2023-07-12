@@ -26,7 +26,7 @@ import PySimpleGUI as sg
 
 from openautoscopev2.zmq.client import GUIClient
 from openautoscopev2.system.oas import OASwithGUI
-from openautoscopev2.devices.utils import array_props_from_string
+from openautoscopev2.devices.utils import array_props_from_string, resolve_path
 from openautoscopev2.devices.dual_displayer import DualDisplayer
 from openautoscopev2.ui.elements import (
     InputWithIncrements, ReturnHandler,
@@ -76,6 +76,10 @@ all_states = jload(fp_configs) if os.path.exists(fp_configs) else dict()
 all_states["tracking_model--COMBO"] = "10x_default_all"
 print(all_states)
 if 'data_directory' in all_states:
+    all_states['data_directory'] = resolve_path(
+        fp = all_states['data_directory'],
+        fp_base_dir = FP_OAS_GUI_FOLDER
+    )
     fp_data_path = all_states['data_directory']
 if not os.path.exists(fp_data_path):
     os.mkdir(fp_data_path)
@@ -274,6 +278,7 @@ ui_tracking_model = ModelsCombo(
     text="Sample Stage/Condition",
     key="tracking_model",
     fp_models_paths = FP_MODELS_PATHS,
+    fp_gui_folder = FP_OAS_GUI_FOLDER,
     default_value=None if 'tracking_model--COMBO' not in all_states else all_states['tracking_model--COMBO']
 )
 elements.append(ui_tracking_model)
