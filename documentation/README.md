@@ -22,7 +22,8 @@ It is assumed that you have already assembled the system before proceeding to th
 ## [Parameters](parameters.md)
 Within this file, you will find the definitions for parameters in the [configuration file](../configs.json) as well as various other components of the system.
 
-## Calibrations 
+## [Calibrations](calibration.md) 
+At this stage, with the hardware assembly completed and the software installed, you are ready to run the system and utilize the graphical user interface. However, it is important to note that certain devices may require calibration, and the cameras need to be aligned to ensure simultaneous focus and image alignment. This guide shows you how to perform the necessary steps.
 
 ## [Sample Preparation](sample_preparation.md)
 The purpose of the protocol is to ensure optimal performance of the tracking algorithm by emphasizing the importance of sample preparation. To achieve precise z tracking during imaging and effectively image single neurons, it is recommended to prepare the sample on glass. For improved tracking accuracy, it is advised to prepare agar plates with a low peptone percentage and seed them with a small amount of OP50 close to the experiment's execution, minimizing food residues in the recordings. Additionally, creating thin agar plates and utilizing agarose or noble agar enhances sample transparency, thereby increasing the signal-to-noise ratio in the recordings.
