@@ -1,4 +1,9 @@
 # Graphical User Interface (GUI)
+
+If you have successfully completed the previous steps, you can run the system by entering the following command into a command prompt window, regardless of the current directory:
+```
+activate oas && oas
+```
 The software's graphical user interface (GUI) resembles the image displayed below.
   
 <p align="center">
