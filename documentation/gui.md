@@ -48,9 +48,7 @@ This mode is designed for precise Z tracking. To utilize this mode, the sample n
 If the user chooses to use this tracking mode, they should manually adjust the motor in the X, Y, and Z directions to focus on each marked point and then press
 the 'Set Point' button. These three points define the plane of the glass surface and will be used to maintain the Z position consistently on this plane.
 ### 12: Tracking's Z Offset
-Regardless of the algorithm utilized for Z tracking, there's a chance that the neurons or fluorescent elements in the sample might be situated at a different Z position
-than the target being tracked via the behavior channel. This parameter offers the flexibility to designate an offset, enabling focus on the elements of interest within the GFP
-channel, even if they're placed at a Z position different from the predicted Z (the result given by the Z tracking algorithm).
+In case interpolation method is utilized for Z tracking, there's a chance that the neurons or fluorescent elements in the sample might be situated at a different Z position than the target being tracked via the behavior channel. This parameter offers the flexibility to designate an offset, enabling focus on the elements of interest within the GFP channel, even if they're placed at a Z position different from the predicted Z (the result given by the Z tracking algorithm).
 ### 13: Tracking Mode
 There are various tracking algorithms available for capturing motion in the x-y plane. The appropriate method to be used depends on factors such as the magnification of the
 objective, imaging conditions (learn more about [sample preparation](sample_preparation.md)), and the developmental stage of the animal (L1, L2, L3, L4, YA). In this section,
