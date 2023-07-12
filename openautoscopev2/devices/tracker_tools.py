@@ -122,7 +122,7 @@ class XYZ4xSharpness:
         # Merge Overlaping or Close Rectangles
         rectangles = rectangles[
             rectangles[:,-1] >= self.tracker.SMALLES_TRACKING_OBJECT
-        ]  # DEBUG disabling small rectangles
+        ]
         labels, rectangles_merged, centroids = merge_rectangles(
             labels, rectangles,
             threshold_ratio_overlap=0.1, threshold_distance=30
@@ -314,8 +314,6 @@ class XYZ4xSharpness:
 
     def calc_img_sharpness(self, img):
         # Threshold and Blur
-        # DEBUG TODO: change these calls to 'self.MASK_WORM_THRESHOLD' and 'self.MASK_WORM_THRESHOLD_BLURED'
-        # since they are now being dynamically changed -> previously they were constant
         img_thrshld = img <= self.tracker.MASK_WORM_THRESHOLD
         img_thrshld_medblur = cv.medianBlur(
             img, self.tracker.MASK_MEDIAN_BLUR

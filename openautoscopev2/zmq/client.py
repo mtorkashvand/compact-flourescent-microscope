@@ -13,8 +13,6 @@ from openautoscopev2.zmq.utils import (
     coerce_bytes
 )
 
-DEBUG = False
-
 class GUIClient():
     """This is a wrapped ZMQ client that can send requests to a server."""
 
@@ -57,8 +55,6 @@ class GUIClient():
         self.publisher.send("logger "+ str(msg))
 
     def process(self, req_str):
-        if DEBUG:
-            return
         self.send(coerce_bytes(req_str))
         self.log(f"<CLIENT WITH GUI> command sent: {req_str}")
         rep_str = coerce_string(self.recv())

@@ -84,7 +84,6 @@ if not os.path.exists(fp_data_path):
     os.mkdir(fp_data_path)
 
 # Parameters
-DEBUG = False
 BACKGROUND_COLOR = '#B3B6B7'
 TEXT_COLOR = '#1B2631'
 BUTTON_COLOR = '#626567'
@@ -446,12 +445,11 @@ offset_gx = x_bound + int(values['offset_gcamp_x'])
 offset_gy = y_bound + int(values['offset_gcamp_y'])
 
 
-if not DEBUG:
-    # Add Configs to Overwrite when running OAS
-    for k,v in all_states.items():
-        values[k] = v
-    oas_with_gui = run_oas_with_gui(**values)
-    oas_with_gui.run()
+# Add Configs to Overwrite when running OAS
+for k,v in all_states.items():
+    values[k] = v
+oas_with_gui = run_oas_with_gui(**values)
+oas_with_gui.run()
 
 # Add some rest time for the camera to initialize so the offset would apply
 time.sleep(1)
@@ -489,13 +487,7 @@ while True:
     frame_g = cv.imencode('.png', img_g)[1].tobytes()
     window['img_frame_r'].update(data=frame_r)
     window['img_frame_g'].update(data=frame_g)
-    # DEBUG
-    if DEBUG:
-        all_states = dict()
-        for element in elements:
-            element.add_state(all_states)
-        jdump(all_states, "tmp.json")
-        break
+
 # Finish up by removing from the screen
 window.close()
 

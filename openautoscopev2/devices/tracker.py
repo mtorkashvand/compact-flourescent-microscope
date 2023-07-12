@@ -303,7 +303,6 @@ class TrackerDevice():
         ## None Message
         if msg is None:
             return
-        ## DEBUG GCaMP
         if self.name == "tracker_gcamp":
             self.data_publisher.send(self.data)
             return
@@ -354,7 +353,6 @@ class TrackerDevice():
         return
 
 
-    # DEBUG
     def change(self, value):
         value_new = self.xytracker.DEVIATION_RATIO_THRESHOLD + float(value)
         self.xytracker.DEVIATION_RATIO_THRESHOLD = min(

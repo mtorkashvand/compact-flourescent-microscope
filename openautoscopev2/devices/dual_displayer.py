@@ -12,8 +12,6 @@ from openautoscopev2.zmq.utils import parse_host_and_port
 from openautoscopev2.zmq.array import TimestampedSubscriber
 from openautoscopev2.devices.utils import array_props_from_string
 
-DEBUG = False
-
 class DualDisplayer:
     def __init__(
             self,
@@ -95,19 +93,15 @@ class DualDisplayer:
             frame: A combination of image_r and image_g decided with param 'channel'
         """
 
-        if DEBUG:
-            self.image_r = np.random.randint(0, 256, size=self.shape)
-            self.image_g = np.random.randint(0, 256, size=self.shape)
-        else:
-            sockets = dict(self.poller.poll())
-            if self.subscriber_r.socket in sockets:
-                msg_r = self.subscriber_r.get_last()
-                if msg_r is not None:
-                    self.image_r = msg_r[1]
-            if self.subscriber_g.socket in sockets:
-                msg_g = self.subscriber_g.get_last()
-                if msg_g is not None:
-                    self.image_g = msg_g[1]
+        sockets = dict(self.poller.poll())
+        if self.subscriber_r.socket in sockets:
+            msg_r = self.subscriber_r.get_last()
+            if msg_r is not None:
+                self.image_r = msg_r[1]
+        if self.subscriber_g.socket in sockets:
+            msg_g = self.subscriber_g.get_last()
+            if msg_g is not None:
+                self.image_g = msg_g[1]
         
         if combine:
             self._q = np.quantile(self.image_g, self.q)

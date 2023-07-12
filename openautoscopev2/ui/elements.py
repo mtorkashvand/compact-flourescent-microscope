@@ -601,7 +601,6 @@ class InputWithIncrements(AbstractElement):
         return
     # Handle
     def handle(self, **kwargs):
-        # DEBUG
         binsize = 2  # DEBUG it should not be constant! comply with run_gui.py
         event = kwargs['event']
         offset_other = kwargs[self.key_offset_other]

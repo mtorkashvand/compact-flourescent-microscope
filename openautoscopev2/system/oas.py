@@ -12,8 +12,6 @@ Different Camera Configuration Serial Numbers:
 - 22591142, 22591117
 """
 
-DEBUG = False
-
 import os
 from subprocess import Popen
 
@@ -97,113 +95,111 @@ class OASwithGUI:
         self.jobs.append(Popen(["oas_forwarder",
                         f"--inbound={forwarder_in}",
                         f"--outbound={forwarder_out}"]))
-            
-        if not DEBUG:
 
-            if not os.path.exists(data_directory):
-                os.makedirs(data_directory)
+        if not os.path.exists(data_directory):
+            os.makedirs(data_directory)
 
-            self.jobs.append(Popen(["oas_processor",
-                            f"--name=controller",
-                            f"--inbound=L{forwarder_out}",
-                            f"--outbound={processor_out}",
-                            f"--deadzone=5000",
-                            f"--threshold=50"]))
+        self.jobs.append(Popen(["oas_processor",
+                        f"--name=controller",
+                        f"--inbound=L{forwarder_out}",
+                        f"--outbound={processor_out}",
+                        f"--deadzone=5000",
+                        f"--threshold=50"]))
 
-            self.jobs.append(Popen(["oas_commands",
-                            f"--inbound=L{processor_out}",
-                            f"--outbound=L{forwarder_in}",
-                            f"--commands=L{forwarder_out}"]))
-            # Behavior Camera
-            self.jobs.append(Popen(["flir_camera",
-                            f"--serial_number={camera_serial_number_behavior}",
-                            f"--commands=L{forwarder_out}",
-                            f"--name=FlirCameraBehavior",
-                            f"--status=L{forwarder_in}",
-                            f"--data=*:{data_camera_out_behavior}",
-                            f"--width={shape[1]}",
-                            f"--height={shape[0]}",
-                            f"--binsize={binsize}",
-                            f"--exposure_time={exposure_behavior}",
-                            f"--frame_rate={framerate}",]))
-            ## GCaMP Camera
-            self.jobs.append(Popen(["flir_camera",
-                            f"--serial_number={camera_serial_number_gcamp}",
-                            f"--commands=L{forwarder_out}",
-                            f"--name=FlirCameraGCaMP",
-                            f"--status=L{forwarder_in}",
-                            f"--data=*:{data_camera_out_gcamp}",
-                            f"--width={shape[1]}",
-                            f"--height={shape[0]}",
-                            f"--binsize={binsize}",
-                            f"--exposure_time={exposure_gcamp}",
-                            f"--frame_rate={framerate}"]))
-            ## Behavior Data Hub
-            self.jobs.append(Popen(["oas_data_hub",
-                            f"--data_in=L{data_camera_out_behavior}",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--status_out=L{forwarder_in}",
-                            f"--data_out={data_stamped_behavior}",
-                            f"--format={format}",
-                            f"--name=data_hub_behavior"]))
-            ## GCaMP Data Hub
-            self.jobs.append(Popen(["oas_data_hub",
-                            f"--data_in=L{data_camera_out_gcamp}",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--status_out=L{forwarder_in}",
-                            f"--data_out={data_stamped_gcamp}",
-                            f"--format={format}",
-                            f"--name=data_hub_gcamp",
-                            "--flip_image"]))  # TODO: convert to an argument coming from GUI
-            ## Behavior Data Writer
-            self.jobs.append(Popen(["oas_writer",
-                            f"--data_in=L{data_stamped_behavior}",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--status_out=L{forwarder_in}",
-                            f"--format={format}",
-                            f"--directory={data_directory}",
-                            f"--video_name=flircamera_behavior",
-                            f"--name=writer_behavior"]))
-            ## GCaMP Data Writer
-            self.jobs.append(Popen(["oas_writer",
-                            f"--data_in=L{data_stamped_gcamp}",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--status_out=L{forwarder_in}",
-                            f"--format={format}",
-                            f"--directory={data_directory}",
-                            f"--video_name=flircamera_gcamp",
-                            f"--name=writer_gcamp"]))
-            # Logger
-            self.jobs.append(Popen(["oas_logger",
-                            f"--inbound={forwarder_out}",
-                            f"--directory={data_directory}"]))
-            # TODO: add selection between only one tracker being activated
-            ## Behavior Tracker
-            self.jobs.append(Popen(["oas_tracker",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--commands_out=L{forwarder_in}",
-                            f"--data_in=L{data_stamped_behavior}",
-                            f"--data_out={tracker_out_behavior}",
-                            f"--format={format}",
-                            f"--interpolation_tracking={interpolation_tracking}",
-                            f"--name=tracker_behavior",
-                            f"--data_out_debug={tracker_out_debug}",
-                        ]))
-            ## GCaMP  Tracker
-            self.jobs.append(Popen(["oas_tracker",
-                            f"--commands_in=L{forwarder_out}",
-                            f"--commands_out=L{forwarder_in}",
-                            f"--data_in=L{data_stamped_gcamp}",
-                            f"--data_out={tracker_out_gcamp}",
-                            f"--format={format}",
-                            f"--interpolation_tracking={interpolation_tracking}",
-                            f"--name=tracker_gcamp",
-                            f"--data_out_debug={tracker_out_debug}",
-                        ]))
+        self.jobs.append(Popen(["oas_commands",
+                        f"--inbound=L{processor_out}",
+                        f"--outbound=L{forwarder_in}",
+                        f"--commands=L{forwarder_out}"]))
+        # Behavior Camera
+        self.jobs.append(Popen(["flir_camera",
+                        f"--serial_number={camera_serial_number_behavior}",
+                        f"--commands=L{forwarder_out}",
+                        f"--name=FlirCameraBehavior",
+                        f"--status=L{forwarder_in}",
+                        f"--data=*:{data_camera_out_behavior}",
+                        f"--width={shape[1]}",
+                        f"--height={shape[0]}",
+                        f"--binsize={binsize}",
+                        f"--exposure_time={exposure_behavior}",
+                        f"--frame_rate={framerate}",]))
+        ## GCaMP Camera
+        self.jobs.append(Popen(["flir_camera",
+                        f"--serial_number={camera_serial_number_gcamp}",
+                        f"--commands=L{forwarder_out}",
+                        f"--name=FlirCameraGCaMP",
+                        f"--status=L{forwarder_in}",
+                        f"--data=*:{data_camera_out_gcamp}",
+                        f"--width={shape[1]}",
+                        f"--height={shape[0]}",
+                        f"--binsize={binsize}",
+                        f"--exposure_time={exposure_gcamp}",
+                        f"--frame_rate={framerate}"]))
+        ## Behavior Data Hub
+        self.jobs.append(Popen(["oas_data_hub",
+                        f"--data_in=L{data_camera_out_behavior}",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--status_out=L{forwarder_in}",
+                        f"--data_out={data_stamped_behavior}",
+                        f"--format={format}",
+                        f"--name=data_hub_behavior"]))
+        ## GCaMP Data Hub
+        self.jobs.append(Popen(["oas_data_hub",
+                        f"--data_in=L{data_camera_out_gcamp}",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--status_out=L{forwarder_in}",
+                        f"--data_out={data_stamped_gcamp}",
+                        f"--format={format}",
+                        f"--name=data_hub_gcamp",
+                        "--flip_image"]))  # TODO: convert to an argument coming from GUI
+        ## Behavior Data Writer
+        self.jobs.append(Popen(["oas_writer",
+                        f"--data_in=L{data_stamped_behavior}",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--status_out=L{forwarder_in}",
+                        f"--format={format}",
+                        f"--directory={data_directory}",
+                        f"--video_name=flircamera_behavior",
+                        f"--name=writer_behavior"]))
+        ## GCaMP Data Writer
+        self.jobs.append(Popen(["oas_writer",
+                        f"--data_in=L{data_stamped_gcamp}",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--status_out=L{forwarder_in}",
+                        f"--format={format}",
+                        f"--directory={data_directory}",
+                        f"--video_name=flircamera_gcamp",
+                        f"--name=writer_gcamp"]))
+        # Logger
+        self.jobs.append(Popen(["oas_logger",
+                        f"--inbound={forwarder_out}",
+                        f"--directory={data_directory}"]))
+        # TODO: add selection between only one tracker being activated
+        ## Behavior Tracker
+        self.jobs.append(Popen(["oas_tracker",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--commands_out=L{forwarder_in}",
+                        f"--data_in=L{data_stamped_behavior}",
+                        f"--data_out={tracker_out_behavior}",
+                        f"--format={format}",
+                        f"--interpolation_tracking={interpolation_tracking}",
+                        f"--name=tracker_behavior",
+                        f"--data_out_debug={tracker_out_debug}",
+                    ]))
+        ## GCaMP  Tracker
+        self.jobs.append(Popen(["oas_tracker",
+                        f"--commands_in=L{forwarder_out}",
+                        f"--commands_out=L{forwarder_in}",
+                        f"--data_in=L{data_stamped_gcamp}",
+                        f"--data_out={tracker_out_gcamp}",
+                        f"--format={format}",
+                        f"--interpolation_tracking={interpolation_tracking}",
+                        f"--name=tracker_gcamp",
+                        f"--data_out_debug={tracker_out_debug}",
+                    ]))
 
-            self.jobs.append(Popen(["oas_teensy_commands",
-                            f"--inbound=L{forwarder_out}",
-                            f"--outbound=L{forwarder_in}",
-                            f"--port={teensy_usb_port}"]))
+        self.jobs.append(Popen(["oas_teensy_commands",
+                        f"--inbound=L{forwarder_out}",
+                        f"--outbound=L{forwarder_in}",
+                        f"--port={teensy_usb_port}"]))
 
         return

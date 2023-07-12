@@ -64,9 +64,7 @@ class  WriteSession(multiprocessing.Process):
         self.device_status = 1
         self.subscription_status = 0
         self.counter = 0
-        self.max_frame_no = 15*60*60*12  # DEBUG TODO
-        self.max_frame_no = 3*60*20  # DEBUG TODO
-        self.max_frame_no = 6*60*60*20  # DEBUG TODO
+        self.max_frame_no = None
         self.max_frames_per_file = 3*60*20
 
 
@@ -154,19 +152,10 @@ class  WriteSession(multiprocessing.Process):
 
 
             elif self.subscription_status : 
-                if self.counter < self.max_frame_no :
+                if self.max_frame_no is not None and self.counter < self.max_frame_no :
                     if self.data_subscriber.socket in sockets:
                         # Writing New Frame
                         (t, vol) = self.data_subscriber.get_last()
-                        # Size Reduction Indices to Forget
-                        if self.is_gcamp:
-                            indices_to_forget = vol < 0
-                        else:
-                            # indices_to_forget = (vol <= 160) & (vol >= 120)  # DEBUG TODO condition for writing part of the image
-                            indices_to_forget = vol < 0
-                        if indices_to_forget.any() > 0:
-                            vol = vol.copy()
-                            vol[indices_to_forget] = 0
                         msg = (t, vol)
                         self.writer.append_data(msg)
                         self.counter +=1

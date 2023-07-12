@@ -219,11 +219,9 @@ class WormTrackerHub(Hub):
         self.send("writer_behavior set_duration {}".format(sec*self.framerate))
         self.send("writer_gcamp set_duration {}".format(sec*self.framerate))
 
-    # DEBUG TODO
     def change_threshold(self, direction):
         msg = "tracker_behavior change_threshold {}".format(direction)
         self.send(msg)
-    # DEBUG TODO
     def change(self, value):
         msg = "tracker_behavior change {}".format(value)
         self.send(msg)
