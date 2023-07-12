@@ -33,6 +33,6 @@ This explains how you can utilize an Xbox controller to easily move the stage an
 
 
 
-## [how to run an imaging session](imaging_session.md)
+## [How to run an imaging session](imaging_session.md)
 This is an example flow for an imaging session with OpenAutoScope 2.0:
 
