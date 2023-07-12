@@ -106,7 +106,6 @@ class OASwithGUI:
         tracker_out_gcamp = self.kwargs['tracker_out_gcamp']
         tracker_out_debug  = self.kwargs['tracker_out_debug']
         data_directory = self.kwargs['data_directory']  # "C:\src\data"
-        logger_directory = self.kwargs['logger_directory']  # "C:\src\data"
         framerate = self.kwargs['framerate']
         format = self.kwargs['format']
         teensy_usb_port = get_teensy_port()
@@ -127,8 +126,6 @@ class OASwithGUI:
 
             if not os.path.exists(data_directory):
                 os.makedirs(data_directory)
-            if not os.path.exists(logger_directory):
-                os.makedirs(logger_directory)
 
             self.jobs.append(Popen(["oas_processor",
                             f"--name=controller",
@@ -203,7 +200,7 @@ class OASwithGUI:
             # Logger
             self.jobs.append(Popen(["oas_logger",
                             f"--inbound={forwarder_out}",
-                            f"--directory={logger_directory}"]))
+                            f"--directory={data_directory}"]))
             # TODO: add selection between only one tracker being activated
             ## Behavior Tracker
             self.jobs.append(Popen(["oas_tracker",
