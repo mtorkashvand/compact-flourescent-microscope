@@ -62,20 +62,29 @@ To ensure that the lighting conditions in the room where the system is located d
 
 To perform the three calibration steps for the image plane, follow these instructions:  
 
-1- Run the system by opening a command prompt and typing activate oas && oas.  
-2- Turn on the IR LED and adjust the stage to focus the behavioral camera on the stacked calibration slide.  
-3- Turn on the 470nm LED, using a low laser power and/or low exposure time to minimize potential saturation.  
-4- Rotate the precision zoom housing to ensure that the GCaMP camera is also focused on the stacked calibration slide. If necessary, make adjustments to the position of both cameras.  
+1- Go to the [configuration file](../configs.json) in the repository, open it, and change the parameter 'q' to 0.  
+2- Run the system by opening a command prompt and typing `activate oas && oas`.  
+3- Turn on the IR LED and adjust the stage to focus the behavioral camera on the stacked calibration slide.  
+4- Turn on the 470nm LED, using a low laser power and/or low exposure time to minimize potential saturation.  
+5- Rotate the precision zoom housing to ensure that the GCaMP camera is also focused on the stacked calibration slide. If necessary, make adjustments to the position of both cameras.  
 Note that the precision zoom housings were initially set to their mid-travel range during assembly.  
-5- Utilize the CUP1 parts to rotate each camera and ensure that the images in both channels have the same orientation. The CUP1 allows you to rotate the camera without changing its position.  
-6- Use the offset buttons on the GUI to adjust the offset values for both the x and y axes for each camera. Fine-tune these values to achieve perfect alignment and ensure that the images are precisely aligned.  
-7- Record the final offset values that resulted in perfect alignment in the [configuration file](../configs.json)  
-
+6- Utilize the CUP1 parts to rotate each camera and ensure that the images in both channels have the same orientation. The CUP1 allows you to rotate the camera without changing its position.
 
 <p align="center">
   <img src="../images/images/camera.png" alt="Image" height="300">
 </p>
 
+7- Use the offset buttons on the GUI to adjust the offset values for both the x and y axes for each camera. Fine-tune these values to achieve perfect alignment and ensure that the images are precisely aligned.  
+8- Record the final offset values that resulted in perfect alignment in the [configuration file](../configs.json) and change the parameter 'q' to 0.7 (or any other desired value)  
+
+Ther fisrt image shows the ovelay image before adjusting the offset values and the second image is after the adjustment.  
+
+<p align="center">
+  <img src="../images/images/before.PNG" alt="Image" height="300">
+</p>
+<p align="center">
+  <img src="../images/images/after.PNG" alt="Image" height="300">
+</p>
 
 
 
