@@ -84,6 +84,12 @@ This file provides a comprehensive guide for the step-by-step installation of al
  - Go to Tools -> Board -> Teensy, and select the teensy board type.
  - Go to Sketch -> Upload, to upload the code on the board.
 
+## Running the system
+If you have successfully completed the previous steps, you can run the system by entering the following command into a command prompt window, regardless of the current directory:
+```
+activate oas && oas
+```
+
 
 
 
