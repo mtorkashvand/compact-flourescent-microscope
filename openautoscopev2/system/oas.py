@@ -20,32 +20,9 @@ from subprocess import Popen
 from serial.tools import list_ports
 from openautoscopev2.devices.utils import array_props_from_string
 
-def get_teensy_port():
-    """
-    This returns the port number for the Teensy board assuming there is one 
-    (and only one) Teensy board connected to a COM port.
-
-    For the case with multiple Teensy boards, you can get a board if VENDOR_ID, PRODUCT_ID
-    and SERIAL_NUMBER are available:
-
-    for port in list(list_ports.comports()):
-        if port[1].startswith("Teensy") and if port[2] == "USB VID:PID=%s:%s SNR=%s"%(VENDOR_ID, PRODUCT_ID, SERIAL_NUMBER):
-	        return port[0]
-    """
-    # DEBUG TODO use the following linkes to change this code
-    # https://pyserial.readthedocs.io/en/latest/tools.html#serial.tools.list_ports.ListPortInfo
-    # https://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
-    return "COM4"
-    for port in list(list_ports.comports()):
-        if port[1].startswith("Teensy"):
-            return port[0]
-    return
-
 class OASwithGUI:
     DEFAUL_KWARGS = dict(
         format = "UINT8_YX_512_512",
-        camera_serial_number_behavior = "22591117",
-        camera_serial_number_gcamp = "22591142",
         binsize = 2,
         exposure_behavior = 1,
         exposure_gcamp = 1,
@@ -62,8 +39,7 @@ class OASwithGUI:
         tracker_out_gcamp = 5008,
         tracker_out_debug  = 5009,
         framerate = 20,
-        data_directory = r"C:\src\data",
-        logger_directory = r"C:\src\data",
+        data_directory = r"C:\src\OpenAutoscope-v2\data",
     )
     # Constructor
     def __init__(self, name, **kwargs) -> None:
@@ -90,6 +66,7 @@ class OASwithGUI:
 
         camera_serial_number_behavior = self.kwargs['camera_serial_number_behavior']
         camera_serial_number_gcamp = self.kwargs['camera_serial_number_gcamp']
+        teensy_usb_port = self.kwargs['teensy_usb_port']
         binsize = self.kwargs['binsize']
         exposure_behavior = self.kwargs['exposure_behavior']
         exposure_gcamp = self.kwargs['exposure_gcamp']
@@ -105,10 +82,9 @@ class OASwithGUI:
         data_stamped_gcamp = self.kwargs['data_stamped_gcamp']
         tracker_out_gcamp = self.kwargs['tracker_out_gcamp']
         tracker_out_debug  = self.kwargs['tracker_out_debug']
-        data_directory = self.kwargs['data_directory']  # "C:\src\data"
+        data_directory = self.kwargs['data_directory']
         framerate = self.kwargs['framerate']
         format = self.kwargs['format']
-        teensy_usb_port = get_teensy_port()
         (_, _, shape) = array_props_from_string(format)
 
         self.jobs.append(Popen(["oas_hub",
