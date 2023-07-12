@@ -295,7 +295,6 @@ class TrackerDevice():
         # Base Cases
         ## None Message
         if msg is None:
-            self.print("received message is NONE")
             return
         ## DEBUG GCaMP
         if self.name == "tracker_gcamp":
@@ -341,13 +340,8 @@ class TrackerDevice():
 
         # Set Velocities
         if self.tracking:
-            # DEBUG
-            if self.vz is not None:
-                # print(self.vz)
-                pass
-            
-            ##setting PID parameters
-            self.set_velocities(-self.vy, self.vx, None)
+            ## setting PID parameters
+            self.set_velocities(-self.vy, self.vx, self.vz)
 
         # Return
         return
@@ -360,7 +354,6 @@ class TrackerDevice():
             max(value_new, 0.0),
             1.0
         )
-        print(f"<{self.name}>@XYThresholdRatio: {self.xytracker.DEVIATION_RATIO_THRESHOLD}")
 
     def change_threshold(self, direction):
         _tmp = self.MASK_WORM_THRESHOLD
@@ -369,8 +362,6 @@ class TrackerDevice():
             0, 255
         )
         self.MASK_WORM_THRESHOLD_BLURED = self.MASK_WORM_THRESHOLD*1.1
-
-        print(f"<{self.name}>@Threshold: {self.MASK_WORM_THRESHOLD}")
         self.send_log(f"threshold changed {_tmp}->{self.MASK_WORM_THRESHOLD}")
 
 

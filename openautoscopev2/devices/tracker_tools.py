@@ -254,8 +254,6 @@ class XYZ4xSharpness:
             # Shift New to Old
             self.tracker.shrp_hist[:_n] = self.tracker.shrp_hist[_n:]
             self.tracker.shrp_idx = _n
-            # DEBUG
-            # self.print(f"Sharpness Old/New: {shrp_old:>6.4f}/{shrp_new:>6.4f}, vz: {self.vz}")
         else:
             self.tracker.shrp_idx += 1
         return
@@ -335,7 +333,6 @@ class XYZ4xSharpness:
         points_extended = np.array(np.where(img_mask_extended))
         # Empty
         if len(points) == 0 or len(points_extended) == 0:
-            print(f"<{self.tracker.name}>@ZERO POINTS")
             return np.nan
         # Sharpness
         samples_x = np.random.choice(xs_unique, size=self.tracker.SHRPNESS_SAMPLES, replace=False) \

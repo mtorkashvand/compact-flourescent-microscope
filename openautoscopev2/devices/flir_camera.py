@@ -102,8 +102,6 @@ class  FlirCamera():
             self.initiated = 1
             self.depth, self.height, self.width, self.binsize = self.set_shape(1, height, width, binsize, None, None)
             self.exposure_time, self.frame_rate = self._set_exposure_time_and_frame_rate(exposure_time, frame_rate)
-            
-            print("{}: Initialized".format(name))
             self.running = 0
             self.first_time_in_loop = 1
             self.publish_status()
@@ -250,12 +248,10 @@ class  FlirCamera():
             node_offset_height.SetValue(y_offset)
         except Exception as e:
             node_offset_height.SetValue(y_offset_old)
-            print(f"Invalid y_offsets catched! :wink:\n{str(e)}")
         try:
             node_offset_width.SetValue(x_offset)
         except Exception as e:
             node_offset_width.SetValue(x_offset_old)
-            print(f"Invalid x_offsets catched! :wink:\n{str(e)}")
 
         self.first_time_in_loop = 1
         self.publish_status()

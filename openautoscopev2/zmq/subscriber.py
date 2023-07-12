@@ -101,7 +101,6 @@ class Subscriber():
         """Decode and print a message."""
 
         msg = coerce_string(msg)
-        print("Subscriber received message: {}".format(msg[:1000]))
 
     def handle(self):
         """Receive and process a message."""
@@ -182,7 +181,7 @@ class ObjectSubscriber(Subscriber):
                 fn(*args)
 
         except Exception as exc:
-            print(str(exc))
+            print("ZMQ/SUBSCRIBER.PY EXCEPTION!", str(exc))
 
 def main():
     """CLI entry point."""

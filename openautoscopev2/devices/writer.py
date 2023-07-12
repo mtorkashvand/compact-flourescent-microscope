@@ -128,7 +128,6 @@ class  WriteSession(multiprocessing.Process):
             self.writer = TimestampedArrayWriter.from_source(self.data_subscriber,
                                                              self.filename)
             self.subscription_status = 1
-            print("Recording Started.")
 
     def stop(self):
         """Closes the hdf file, updates the status. """
@@ -136,7 +135,6 @@ class  WriteSession(multiprocessing.Process):
             self.subscription_status = 0
             self.counter =0
             self.writer.close()
-            print("Recording Ended.")
 
     def shutdown(self):
         """Close the hdf file and end while true loop of the poller"""

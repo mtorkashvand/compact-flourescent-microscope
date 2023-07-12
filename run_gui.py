@@ -74,7 +74,6 @@ fp_configs = os.path.join(
 )
 all_states = jload(fp_configs) if os.path.exists(fp_configs) else dict()
 all_states["tracking_model--COMBO"] = "10x_default_all"
-print(all_states)
 if 'data_directory' in all_states:
     all_states['data_directory'] = resolve_path(
         fp = all_states['data_directory'],

@@ -151,7 +151,6 @@ def main():
     processor = XboxStageCommands(inbound, outbound, commands)
 
     processor.run()
-    print("SHIT IS DEAD! X_X")
 
 if __name__ == "__main__":
     main()

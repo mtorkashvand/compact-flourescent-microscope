@@ -221,11 +221,9 @@ class LEDCompound(AbstractElement):
         if self.toggle:
             intensity = self.type_caster(self.get() * 2.55)
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} {intensity}"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         else:
             client_cli_cmd = f"DO _teensy_commands_set_led {self.led_name} 0"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -285,7 +283,6 @@ class LEDIR(AbstractElement):
             self.button.update(image_data=image_data)
         state_str = "n" if self.toggle else "f"
         client_cli_cmd = f"DO _teensy_commands_set_toggle_led {state_str}"
-        print(f"Executing: '{client_cli_cmd}'")
         self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -342,7 +339,6 @@ class ToggleRecording(AbstractElement):
                 client_cli_cmd = f"DO _writer_stop"
                 self.button.update(image_data=self.icon_off)
                 self.text.update(value=self.text_off)
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -399,7 +395,6 @@ class ToggleTracking(AbstractElement):
                 client_cli_cmd = f"DO _tracker_stop"
                 self.button.update(image_data=self.icon_off)
                 self.text.update(value=self.text_off)
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -459,7 +454,6 @@ class ExposureCompound(AbstractElement):
         client_cli_cmd = "DO _flir_camera_set_exposure_framerate_{} {} {}".format(
             self.camera_name, exposure_time, framerate
         )
-        print(f"Executing: '{client_cli_cmd}'")
         self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -632,7 +626,6 @@ class InputWithIncrements(AbstractElement):
         client_cli_cmd = "DO _flir_camera_set_region_{} 1 {} {} {} {} {}".format(
             self.camera_name, 512, 512, binsize, offset_y, offset_x  # DEBUG shape can change! make it complient with run_gui.py
         )
-        print(f"Executing: '{client_cli_cmd}'")
         self.client.process(client_cli_cmd)
         return
     # Get
@@ -699,7 +692,6 @@ class InputwithIncrementsforZOffset(AbstractElement):
         value_new = self.get()
         # TODO: add offset-z functionality and CMD call
         # client_cli_cmd = ""
-        # print(f"Executing: '{client_cli_cmd}'")
         # self.client.process(client_cli_cmd)
         return
     
@@ -751,7 +743,6 @@ class ModelsCombo(AbstractElement):
             key: resolve_path(fp, self.fp_gui_folder) for key,fp in jload( self.fp_models_paths ).items()
         }
         values = list(self.model_paths)
-        print(self.model_paths)
         self.combo.update(
             values=values, value=values[0]
         )
@@ -764,7 +755,6 @@ class ModelsCombo(AbstractElement):
             key = self.get()
             fp_model = self.model_paths[key]
             client_cli_cmd = "DO _tracker_set_tracking_system {} {}".format(key, fp_model)
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     
@@ -845,7 +835,6 @@ class ZInterpolationTracking(AbstractElement):
         if event == self.key_checkbox:
             p_disabled = not self.checkbox.get()
             client_cli_cmd = "DO _tracker_interpolate_z_tracking {}".format(int(self.checkbox.get()))
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
             button_color = self.color_disabled if p_disabled else self.color_unset
             self.p1.update(disabled=p_disabled, button_color=button_color)
@@ -856,19 +845,16 @@ class ZInterpolationTracking(AbstractElement):
             self.p1_is_set = True
             self.p1.update(button_color=self.color_set)
             client_cli_cmd = "DO set_point 1"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         elif event == self.key_p2:
             self.p2_is_set = True
             self.p2.update(button_color=self.color_set)
             client_cli_cmd = "DO set_point 2"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         elif event == self.key_p3:
             self.p3_is_set = True
             self.p3.update(button_color=self.color_set)
             client_cli_cmd = "DO set_point 3"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -971,7 +957,6 @@ class XYGamePad(AbstractElement):
             # Stop velocity
             motor = 'x' if '$X$' in event else 'y'
             client_cli_cmd = f"DO _teensy_commands_move{motor} 0"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         elif event.endswith("-Press"):
             # Set Velocity
@@ -979,7 +964,6 @@ class XYGamePad(AbstractElement):
             sign = 1 if '$+$' in event else -1
             speed = self.get()
             client_cli_cmd = f"DO _teensy_commands_move{motor} {sign*speed}"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -1077,14 +1061,12 @@ class ZGamePad(AbstractElement):
         if event.endswith("-Release"):
             # Stop velocity
             client_cli_cmd = f"DO _teensy_commands_movez 0"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         elif event.endswith("-Press"):
             # Set Velocity
             sign = 1 if '$+$' in event else -1
             speed = self.get()
             client_cli_cmd = f"DO _teensy_commands_movez {sign*speed}"
-            print(f"Executing: '{client_cli_cmd}'")
             self.client.process(client_cli_cmd)
         return
     def add_values(self, values):
@@ -1147,7 +1129,6 @@ class FolderBrowser(AbstractElement):
         # Stop velocity
         directory = self.get()
         client_cli_cmd = f"DO _set_directories {directory}"
-        print(f"Executing: '{client_cli_cmd}'")
         self.client.process(client_cli_cmd)
         return
     def add_values(self, values):

@@ -80,7 +80,7 @@ class TeensyCommandsDevice():
             self.serial_obj = Serial(port=self.port, baudrate=115200, timeout=0)
             self.is_port_open = self.serial_obj.is_open
         except Exception as e:
-            print (e)
+            self.log(e)
             return
 
         self.reset_leds()
@@ -109,7 +109,6 @@ class TeensyCommandsDevice():
 
     def get_pos(self, name, i):
         self._execute("get_pos")
-        print(f"{name} set_pos {self.x} {self.y} {self.z}")
         self.status_publisher.send(f"{name} set_pos {i} {self.x} {self.y} {self.z}")
     
     def get_curr_pos(self, name):
@@ -146,32 +145,7 @@ class TeensyCommandsDevice():
         self.led_state = not self.led_state
     ## Set
     def set_led(self, led_name, intensity):
-        # DEBUG
-        print(f"<SE LED> led: {led_name}, intensity: {intensity}", end='\r')
         self._execute("set_intesity_led", led_name=led_name, intensity=intensity)
-    ## Next LED
-    def next_led(self):
-        self.led_idx_current = (self.led_idx_current+1)%len(self.led_intensities)
-        # DEBUG
-        print(f"<NEXT LED> current led: {self.led_names[self.led_idx_current]}")
-    ## Lightup Current Led
-    def lightup_led(self):
-        led_name = self.led_names[self.led_idx_current]
-        intensity_new = min(
-            255,
-            self.led_intensities[led_name] + 10  # DEBUG
-        )
-        self.led_intensities[led_name] = intensity_new
-        self.set_led(led_name=led_name, intensity=intensity_new)
-    ## Dimdown Current Led
-    def dimdown_led(self):
-        led_name = self.led_names[self.led_idx_current]
-        intensity_new = max(
-            0,
-            self.led_intensities[led_name] - 10 # DEBUG
-        )
-        self.led_intensities[led_name] = intensity_new
-        self.set_led(led_name=led_name, intensity=intensity_new)
     ## Reset
     def reset_leds(self):
         self.led_state = True
@@ -207,9 +181,6 @@ class TeensyCommandsDevice():
         while not reply:
             reply = self.serial_obj.readline()
         coords = reply.decode("utf-8")[:-1].split(" ")
-        # DEBUG
-        # print(f"cmd: {formatted_string}")
-        # print(f"pos: {pos}")
         self.coords = [int(coord) for coord in coords]
         self.update_coordinates()
 

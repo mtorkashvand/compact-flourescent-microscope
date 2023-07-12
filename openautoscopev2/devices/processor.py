@@ -302,9 +302,7 @@ def main():
     threshold = int(arguments["--threshold"])
 
     processor = XInputProcessor(name, inbound, outbound, deadzone, threshold)
-
     processor.run()
-    print("\n\n\nAFTER DEATH! PROCESSOR\n\n\n")
 
 if __name__ == "__main__":
     main()
