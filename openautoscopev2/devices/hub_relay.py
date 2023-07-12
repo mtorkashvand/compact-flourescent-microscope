@@ -212,6 +212,8 @@ class WormTrackerHub(Hub):
 
     def _tracker_set_tracking_system(self, tracking_specs, fp_model_onnx):
         self.send(f"tracker_behavior set_tracking_system {tracking_specs} {fp_model_onnx}")
+    def _tracker_set_offset_z(self, offset_z):
+        self.send(f"tracker_behavior set_offset_z {offset_z}")
 
     def duration(self, sec):
         self.send("writer_behavior set_duration {}".format(sec*self.framerate))

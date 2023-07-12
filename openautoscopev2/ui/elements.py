@@ -690,9 +690,8 @@ class InputwithIncrementsforZOffset(AbstractElement):
         # Get Values and Set
         self.input_as.handle(**kwargs)
         value_new = self.get()
-        # TODO: add offset-z functionality and CMD call
-        # client_cli_cmd = ""
-        # self.client.process(client_cli_cmd)
+        client_cli_cmd = f"DO _tracker_set_offset_z {value_new}"
+        self.client.process(client_cli_cmd)
         return
     
     def get(self):

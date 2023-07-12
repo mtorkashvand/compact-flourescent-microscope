@@ -92,6 +92,7 @@ class TrackerDevice():
         self.curr_point = np.zeros(3)
         self.N = np.zeros(3) * np.nan
         self.isN = False
+        self.offset_z = 0
         
 
         np.seterr(divide = 'ignore')
@@ -189,7 +190,9 @@ class TrackerDevice():
         if not self.isN:
             self.vz = 0
             return
-        d = np.dot(self.curr_point, self.N) - self.d0
+        curr_point_offsetted = self.curr_point.copy()
+        curr_point_offsetted[2] += self.offset_z
+        d = np.dot(curr_point_offsetted, self.N) - self.d0
         sign = -np.sign(d)
         magnitude = (self.VZ_MAX * 2) * ( np.abs(d) / (1+np.abs(d)) )
         self.vz = int( sign * magnitude )
@@ -203,6 +206,10 @@ class TrackerDevice():
     def set_curr_pos(self, x, y, z):
         self.curr_point[:] = [x, y, z]
         self.send_log(f"received position ({x},{y},{z})")
+
+    def set_offset_z(self, offset_z):
+        self.offset_z = offset_z
+        self.send_log(f"offset-z changed to {self.offset_z}")
 
     # Detectors
     def set_tracking_system(self, tracking_specs, fp_model_onnx):
